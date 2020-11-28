@@ -15,7 +15,7 @@ require('./browser')
 //SegfaultHandler.registerHandler('crash.log')
 
 argv = require('minimist')(process.argv.slice(2), {
-  string: ['username', 'pw']
+  string: ['username', 'pw'],
 })
 
 datadir = argv.datadir ? argv.datadir : 'data'
@@ -28,7 +28,7 @@ process.title = 'Fairlayer ' + base_port
 cache = {
   ins: {},
   users: {},
-  ch: {}
+  ch: {},
 }
 
 exitsync = false
@@ -37,15 +37,12 @@ monkeys = []
 
 on_server = !!argv['prod-server']
 
-let git_commit = child_process
-  .execSync('cat HEAD')
-  .toString()
-  .trim()
+let git_commit = child_process.execSync('cat HEAD').toString().trim()
 
 // must stay global for logs
 Raven = require('raven')
 Raven.config('https://299a833b1763402f9216d8e7baeb6379@sentry.io/1226040', {
-  release: git_commit
+  release: git_commit,
 }).install()
 
 const OnchainDB = require('./db/onchain_db')
@@ -80,7 +77,7 @@ startFairlayer = async () => {
   Object.assign(global, global.onchainDB.models)
   Object.assign(global, global.offchainDB.models)
 
-  let inspect = function() {
+  let inspect = function () {
     return JSON.stringify(this, null, 4)
   }
 

@@ -28,7 +28,7 @@ module.exports = async (a) => {
 
   let bundler
 
-  var cb = async function(req, res) {
+  var cb = async function (req, res) {
     // Clickjacking protection
     res.setHeader('X-Frame-Options', 'DENY')
 
@@ -46,15 +46,15 @@ module.exports = async (a) => {
         var stat = fs.statSync(file)
         res.writeHeader(200, {'Content-Length': stat.size})
         var fReadStream = fs.createReadStream(file)
-        fReadStream.on('data', function(chunk) {
+        fReadStream.on('data', function (chunk) {
           if (!res.write(chunk)) {
             fReadStream.pause()
           }
         })
-        fReadStream.on('end', function() {
+        fReadStream.on('end', function () {
           res.end()
         })
-        res.on('drain', function() {
+        res.on('drain', function () {
           fReadStream.resume()
         })
       } catch (e) {
@@ -65,7 +65,7 @@ module.exports = async (a) => {
 
       let args = {
         start_block: parseInt(parts[1]),
-        limit: parseInt(parts[2])
+        limit: parseInt(parts[2]),
       }
 
       // respond with raw chain as a file to save
@@ -75,9 +75,7 @@ module.exports = async (a) => {
       res.writeHead(200, {
         'Content-Type': 'binary',
         'Content-Length': raw_chain.length,
-        'Content-Disposition': `attachment; filename=Fair_blocks_${
-          args.start_block
-        }_${args.limit}`
+        'Content-Disposition': `attachment; filename=Fair_blocks_${args.start_block}_${args.limit}`,
       })
 
       res.end(raw_chain)
@@ -120,18 +118,23 @@ module.exports = async (a) => {
 
         let auth_code = instanceLog.split('auth_code":"')[1].split('"')[0]
         // we redirect the user to authenticated cloud instance
-
         res.writeHead(302, {
-          Location: `https://demo-${nextPort -
-            startingPort}.fairlayer.com/#auth_code=${auth_code}`
+          Location: `http://fairlayer.com:${nextPort}/#auth_code=${auth_code}`,
         })
+
+        /*
+        res.writeHead(302, {
+          Location: `http://demo-${
+            nextPort - startingPort
+          }.fairlayer.com/#auth_code=${auth_code}`,
+        })*/
 
         setTimeout(() => {
           l(`Destroying demo... ${nextPort}`)
           //child_process.execSync(``)
           // free up port
           delete me.busyPorts[nextPort]
-        }, 60 * 60 * 1000)
+        }, 30 * 60 * 1000)
 
         res.end('redirect')
       } else {
@@ -142,26 +145,24 @@ module.exports = async (a) => {
     } else if (path == '/health') {
       res.end(
         JSON.stringify({
-          uptime: ts() - node_started_at
+          uptime: ts() - node_started_at,
         })
       )
     } else if (path == '/rpc') {
       res.setHeader('Content-Type', 'application/json')
 
       var queryData = ''
-      req.on('data', function(data) {
+      req.on('data', function (data) {
         queryData += data
       })
 
-      req.on('end', function() {
+      req.on('end', function () {
         // HTTP /rpc endpoint supports passing request in GET too
         var json = Object.assign(querystring.parse(query), parse(queryData))
 
         if (!json.params) json.params = {}
         RPC.internal_rpc(res, json)
       })
-    } else if (path == '/sdk.html') {
-      serveStatic('../wallet')(req, res, finalhandler(req, res))
     } else {
       bundler(req, res, finalhandler(req, res))
     }
@@ -171,7 +172,7 @@ module.exports = async (a) => {
     const walletUrl = argv['wallet-url']
     const http = require('http')
     const proxy = require('http-proxy').createProxyServer({
-      target: walletUrl
+      target: walletUrl,
     })
     bundler = (req, res) => proxy.web(req, res, {}, finalhandler(req, res))
     let retries = 0
@@ -203,11 +204,15 @@ module.exports = async (a) => {
       break
     }
   } else if (argv['wallet-dist']) {
-    bundler = serveStatic(path.resolve(__dirname, '../dist'))
+    let dist = path.resolve(__dirname, '../dist')
+    console.log('Start parcel at dist ' + dist)
+    bundler = serveStatic(dist)
   } else {
     let Parcel = require('parcel-bundler')
-    bundler = new Parcel(path.resolve(__dirname, '../wallet/index.html'), {
-      logLevel: 2
+    let index = path.resolve(__dirname, '../wallet/index.html')
+    console.log('Start parcel at ' + index)
+    bundler = new Parcel(index, {
+      logLevel: 2,
       // for more options https://parceljs.org/api.html
     }).middleware()
   }
@@ -216,8 +221,8 @@ module.exports = async (a) => {
   var server = require('http').createServer(cb)
 
   server
-    .listen(on_server ? base_port + 200 : base_port)
-    .once('error', function(err) {
+    .listen(on_server ? base_port : base_port)
+    .once('error', function (err) {
       if (err.code === 'EADDRINUSE') {
         openBrowser()
         l(
@@ -233,10 +238,10 @@ module.exports = async (a) => {
 
   internal_wss = new ws.Server({server: server, maxPayload: 64 * 1024 * 1024})
 
-  internal_wss.on('error', function(err) {
+  internal_wss.on('error', function (err) {
     console.error(err)
   })
-  internal_wss.on('connection', function(ws) {
+  internal_wss.on('connection', function (ws) {
     ws.on('message', (msg) => {
       RPC.internal_rpc(ws, parse(bin(msg).toString()))
     })

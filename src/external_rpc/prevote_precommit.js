@@ -15,7 +15,7 @@ module.exports = async (pubkey, json, ws) => {
   }
 
   if (!me.proposed_block) {
-    l(`${m.id}:${json.method}.`)
+    l(`${m.id}:${json.method} no proposed_block`)
     return
   }
 

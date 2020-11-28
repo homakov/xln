@@ -15,7 +15,7 @@ during merge: no transitions can be applied, otherwise deadlock could happen.
 Always flush opportunistically, unless you are acking your direct partner who sent tx to you.
 */
 
-module.exports = async (pubkey, opportunistic) => {
+module.exports = async (pubkey, opportunistic, rawJSON) => {
   await section(['use', pubkey], async () => {
     if (trace) l(`Started Flush ${trim(pubkey)} ${opportunistic}`)
 
@@ -87,7 +87,7 @@ module.exports = async (pubkey, opportunistic) => {
 
     // merge cannot add new transitions because expects another ack
     // in merge mode all you do is ack last (merged) state
-    if (ch.d.status == 'master') {
+    if (ch.d.status == 'main') {
       // bank waits a bit in case destination returns secret quickly
       //if (me.my_bank && !opportunistic) await sleep(150)
 
@@ -133,17 +133,13 @@ module.exports = async (pubkey, opportunistic) => {
           ) {
             if (trace)
               loff(
-                `error cannot transit ${t.amount}/${derived.available}. Locks ${
-                  derived.outwards.length
-                }.`
+                `error cannot transit ${t.amount}/${derived.available}. Locks ${derived.outwards.length}.`
               )
 
             if (me.my_bank && t.amount > derived.available) {
               me.textMessage(
                 ch.d.they_pubkey,
-                `Cant send ${t.amount} available ${
-                  derived.available
-                }, extend credit`
+                `Cant send ${t.amount} available ${derived.available}, extend credit`
               )
             }
 
@@ -204,7 +200,7 @@ module.exports = async (pubkey, opportunistic) => {
           t.type,
           args,
           ec(nextState, me.id.secretKey),
-          nextState
+          nextState,
         ])
 
         if (trace)
@@ -235,14 +231,18 @@ module.exports = async (pubkey, opportunistic) => {
 
       signedState: ch.d.signed_state,
 
-      transitions: transitions
+      opportunistic: opportunistic,
+
+      rawJSON: rawJSON,
+
+      transitions: transitions,
     }
 
     if (transitions.length > 0) {
       // if there were any transitions, we need an ack on top
       ch.d.ack_requested_at = ts()
       //l('Set ack request ', ch.d.ack_requested_at, trim(pubkey))
-      //ch.d.pending = stringify(data)
+      ch.d.pending = stringify(data)
       ch.d.status = 'sent'
       if (trace) l(`Flushing ${transitions.length} to ${trim(pubkey)}`)
     }

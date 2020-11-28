@@ -38,35 +38,35 @@ const defineModels = (sequelize) => {
       // higher nonce is valid
       dispute_nonce: {
         type: Sequelize.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
       },
 
       // used during rollbacks
       rollback_nonce: {
         type: Sequelize.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
       },
 
       status: {
         type: Sequelize.ENUM(
-          'master',
+          'main',
           'sent',
           'merge',
           'disputed',
           'CHEAT_dontack'
-        )
+        ),
       },
 
       pending: Sequelize.BLOB,
 
       ack_requested_at: {
         type: Sequelize.DATE,
-        defaultValue: null
+        defaultValue: null,
       },
 
       could_rebalance: {
         type: Sequelize.BOOLEAN,
-        defaultValue: false
+        defaultValue: false,
       },
 
       last_online: Sequelize.DATE,
@@ -77,7 +77,7 @@ const defineModels = (sequelize) => {
 
       // All the safety Byzantine checks start with cheat_
       CHEAT_profitable_state: Sequelize.BLOB,
-      CHEAT_profitable_sig: Sequelize.BLOB
+      CHEAT_profitable_sig: Sequelize.BLOB,
     },
     {
       indexes: [
@@ -85,11 +85,11 @@ const defineModels = (sequelize) => {
           fields: [
             {
               attribute: 'they_pubkey',
-              length: 32
-            }
-          ]
-        }
-      ]
+              length: 32,
+            },
+          ],
+        },
+      ],
     }
   )
 
@@ -99,70 +99,70 @@ const defineModels = (sequelize) => {
     {
       asset: {
         type: Sequelize.INTEGER,
-        defaultValue: 1
+        defaultValue: 1,
       },
 
       offdelta: {
         type: Sequelize.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
       },
 
       rollback_offdelta: {
         type: Sequelize.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
       },
 
       // by default all limits set to 0
       rebalance: {
         type: Sequelize.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
       },
       credit: {
         type: Sequelize.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
       }, // we trust up to
 
       they_rebalance: {
         type: Sequelize.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
       },
       they_credit: {
         type: Sequelize.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
       }, // they trust us
 
       requested_insurance: {
         type: Sequelize.BOOLEAN,
-        defaultValue: false
+        defaultValue: false,
       },
 
       they_requested_insurance: {
         type: Sequelize.BOOLEAN,
-        defaultValue: false
+        defaultValue: false,
       },
 
       withdrawal_amount: {
         type: Sequelize.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
       },
 
       withdrawal_sig: Sequelize.BLOB, // we store a withdrawal sig to use in next rebalance
 
       they_withdrawal_amount: {
         type: Sequelize.INTEGER,
-        defaultValue: 0
-      }
+        defaultValue: 0,
+      },
     },
     {
       indexes: [
         {
           fields: [
             {
-              attribute: 'asset'
-            }
-          ]
-        }
-      ]
+              attribute: 'asset',
+            },
+          ],
+        },
+      ],
     }
   )
 
@@ -172,7 +172,7 @@ const defineModels = (sequelize) => {
       id: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
-        primaryKey: true
+        primaryKey: true,
       },
 
       //todo: move to single field addnew, addsent ...
@@ -182,7 +182,7 @@ const defineModels = (sequelize) => {
 
       processed: {
         type: Sequelize.BOOLEAN,
-        defaultValue: false
+        defaultValue: false,
       }, // did merchant app process this deposit already
 
       // streaming payments
@@ -197,7 +197,7 @@ const defineModels = (sequelize) => {
       // asset type
       asset: {
         type: Sequelize.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
       },
 
       // secret or fail reason
@@ -225,15 +225,14 @@ const defineModels = (sequelize) => {
       inward_pubkey: Sequelize.BLOB,
 
       // resulting balance
-      resulting_balance: Sequelize.INTEGER
-
+      resulting_balance: Sequelize.INTEGER,
     },
     {
       indexes: [
         {
-          fields: ['type', 'status']
-        }
-      ]
+          fields: ['type', 'status'],
+        },
+      ],
     }
   )
 
@@ -258,14 +257,14 @@ const defineModels = (sequelize) => {
 
       // happened events stored in JSON
       meta: Sequelize.TEXT,
-      total_tx: Sequelize.INTEGER
+      total_tx: Sequelize.INTEGER,
     },
     {
       indexes: [
         {
-          fields: [{attribute: 'prev_hash', length: 32}]
-        }
-      ]
+          fields: [{attribute: 'prev_hash', length: 32}],
+        },
+      ],
     }
   )
 
@@ -283,7 +282,7 @@ const defineModels = (sequelize) => {
     blockId: Sequelize.INTEGER, // when it happened
 
     processed: Sequelize.BOOLEAN,
-    public_invoice: Sequelize.BLOB
+    public_invoice: Sequelize.BLOB,
   })
 
   // offchain order for instant trustless exchange
@@ -291,7 +290,7 @@ const defineModels = (sequelize) => {
     amount: Sequelize.INTEGER,
     rate: Sequelize.FLOAT,
     assetId: Sequelize.INTEGER,
-    buyAssetId: Sequelize.INTEGER
+    buyAssetId: Sequelize.INTEGER,
   })
 
   let nonull = {foreignKey: {allowNull: false}, onDelete: 'CASCADE'}
@@ -302,7 +301,7 @@ const defineModels = (sequelize) => {
   Channel.hasMany(Payment, nonull)
   Payment.belongsTo(Channel, nonull)
 
-  Channel.prototype.isLeft = function() {
+  Channel.prototype.isLeft = function () {
     return Buffer.compare(me.pubkey, this.they_pubkey) == -1
   }
 
@@ -317,7 +316,7 @@ const defineModels = (sequelize) => {
     Event: Event,
 
     Block: Block,
-    OffOrder: OffOrder
+    OffOrder: OffOrder,
   }
 }
 
@@ -334,11 +333,11 @@ const productionDBConfig = (datadir, dbtoken, dbpool) => {
     dialect: dialect,
     host: '127.0.0.1',
     define: {timestamps: true}, // we don't mind timestamps in offchain db
-    operatorsAliases: false,
+
     logging: logger,
     benchmark: true,
     retry: {
-      max: 10
+      max: 10,
     },
     pool: {
       max: dbpool,
@@ -346,8 +345,8 @@ const productionDBConfig = (datadir, dbtoken, dbpool) => {
       acquire: 20000,
       idle: 20000,
       evict: 30000,
-      handleDisconnects: true
-    }
+      handleDisconnects: true,
+    },
   }
 
   return [database, username, password, config]
@@ -362,17 +361,17 @@ const defaultDBConfig = (datadir) => {
     dialect: 'sqlite',
     storage: datadir + '/offchain/db.sqlite',
     define: {timestamps: true}, // we don't mind timestamps in offchain db
-    operatorsAliases: false,
+
     logging: false,
     retry: {
-      max: 20
+      max: 20,
     },
     pool: {
       max: 10,
       min: 0,
       acquire: 10000,
-      idle: 10000
-    }
+      idle: 10000,
+    },
   }
 
   return [database, username, password, config]
@@ -397,9 +396,7 @@ class OffchainDB {
 
   init() {
     l(
-      `Initializing offchain db, datadir ${this.datadir}, dbtoken ${
-        this.dbtoken
-      }, force ${this.force}`
+      `Initializing offchain db, datadir ${this.datadir}, dbtoken ${this.dbtoken}, force ${this.force}`
     )
 
     const [database, username, password, config] = getDBConfig(

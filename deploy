@@ -12,11 +12,11 @@ rm -rf isolate*
 
 # put last git commit into readable file
 git rev-parse HEAD > HEAD
-
-rsync . root@104.236.132.247:~/fair -rv  --exclude '.git' --exclude 'node_modules' --exclude 'dist' --exclude '.cache' 
+#--exclude 'dist'
+rsync . root@188.120.244.199:~/f -rv  --exclude '.git' --exclude 'node_modules'  --exclude '.cache' 
 #--delete
 
-ssh root@104.236.132.247 <<'ENDSSH'
-cd ~/fair
+ssh root@188.120.244.199 <<'ENDSSH'
+cd ~/f
 ./prod
 ENDSSH

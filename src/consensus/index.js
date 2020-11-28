@@ -39,12 +39,12 @@ const prevote_precommit = require('./precommit')
 const precommit_await = require('./await')
 
 const compute_phase = () => {
-  const second = ts() % K.blocktime
-  if (second < K.step_latency) {
+  const millisecond = ts() % K.blocktime
+  if (millisecond < K.step_latency) {
     return 'propose'
-  } else if (second < K.step_latency * 2) {
+  } else if (millisecond < K.step_latency * 2) {
     return 'prevote'
-  } else if (second < K.step_latency * 3) {
+  } else if (millisecond < K.step_latency * 3) {
     return 'precommit'
   } else {
     return 'await'

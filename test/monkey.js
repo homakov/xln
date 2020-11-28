@@ -12,8 +12,8 @@ const payMonkey = async (on_server, counter = 1) => {
 
   await me.payChannel({
     address: parsedAddress.address,
-    amount: 100 + Math.round(Math.random() * 200),
-    asset: 1
+    amount: 50000 + Math.round(Math.random() * 100000),
+    asset: 1,
   })
 
   const reg = await getUserByIdOrKey(parsedAddress.pubkey)
@@ -24,8 +24,8 @@ const payMonkey = async (on_server, counter = 1) => {
     [
       Math.round(Math.random() * 1000),
       reg.id ? reg.id : parsedAddress.pubkey,
-      0
-    ]
+      0,
+    ],
   ])
 
   // run on server infinitely and with longer delays
@@ -35,11 +35,11 @@ const payMonkey = async (on_server, counter = 1) => {
 
     setTimeout(() => {
       payMonkey(on_server, counter + 1)
-    }, Math.round(500 + Math.random() * 9000))
+    }, Math.round(1000 + Math.random() * 9000))
   } else if (counter < 6) {
     setTimeout(() => {
       payMonkey(on_server, counter + 1)
-    }, 300)
+    }, 1000)
   }
 }
 
@@ -69,7 +69,7 @@ let run = async () => {
         they_pubkey: K.banks[0].pubkey,
         asset: 1,
         rebalance: K.rebalance,
-        credit: K.credit
+        credit: K.credit,
       })
 
       await sleep(3000)
@@ -79,7 +79,7 @@ let run = async () => {
         action: 'faucet',
         asset: 1,
         amount: 500000,
-        address: me.getAddress()
+        address: me.getAddress(),
       })
 
       l('Requesting faucet to ' + me.getAddress())
@@ -92,14 +92,14 @@ let run = async () => {
           method: 'withdraw',
           they_pubkey: toHex(ch.d.they_pubkey),
           asset: 1,
-          amount: 1234
+          amount: 1234,
         })
 
         require('../src/internal_rpc/external_deposit')({
           asset: 1,
           userId: 3,
           bank: 1,
-          amount: 1234
+          amount: 1234,
         })
       }
     }, K.blocktime)
@@ -113,7 +113,7 @@ let run = async () => {
         address:
           'BummA99ygBEKX5pwxQdjgwLuBWUe1J3y83PgG4UUPRVeBLcq9z1MvbGwCVywazybHj3cazHohFMkhxhako7xmRU4t7cZSSSC#FAIL',
         amount: 100,
-        asset: 1
+        asset: 1,
       }).then(console.log)
     }, 20000)
   }
@@ -155,7 +155,7 @@ let run = async () => {
       l(e2e)
 
       Raven.captureMessage(e2e, {
-        level: 'info'
+        level: 'info',
       })
 
       child_process.exec(`osascript -e 'display notification "${e2e}"'`)
@@ -177,7 +177,7 @@ let run = async () => {
 
   if (me.record.id == 4) {
     // trigger the dispute from bank
-    
+
     //me.CHEAT_dontack = true
     me.CHEAT_dontwithdraw = true
 
@@ -185,7 +185,7 @@ let run = async () => {
       me.payChannel({
         amount: 20000,
         address: monkeys[0],
-        asset: 1
+        asset: 1,
       })
     }, 12000)
   }

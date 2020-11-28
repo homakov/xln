@@ -5,7 +5,8 @@ module.exports = async (
   ackState,
   ackSig,
   transitions,
-  theirSignedState
+  theirSignedState,
+  rawJSON
 ) => {
   let ch = await Channel.get(pubkey)
   ch.last_used = ts()
@@ -35,8 +36,10 @@ module.exports = async (
   // decode from hex and unpack
   theirSignedState = theirSignedState ? r(fromHex(theirSignedState)) : false
   prettyState(theirSignedState)
+  prettyState(ackState)
 
   let mismatch = (reason, lastState) => {
+    console.log('rawJSON:', stringify(rawJSON.rawJSON))
     l(`=========${reason}. Rollback ${ch.d.rollback_nonce}
   Current state 
   ${ascii_state(ch.state)}
@@ -86,6 +89,9 @@ module.exports = async (
     if (transitions.length == 0) {
       mismatch('Empty invalid ack ' + ch.d.status)
       fatal('Empty invalid ack ' + ch.d.status)
+      //me.send(ch.d.they_pubkey, parse(ch.d.pending))
+
+      //me.flushChannel(ch, true)
       return
     }
 
@@ -152,18 +158,6 @@ module.exports = async (
 
       let box_data = open_box_json(unlocker)
 
-      // these things CANT happen, partner is malicious so just ignore and break
-      if (amount < K.min_amount || amount > derived.they_available) {
-        l('Bad amount: ', amount, derived.they_available)
-        break
-      }
-      if (hash.length != 32) {
-        break
-      }
-      if (derived.inwards.length >= K.max_hashlocks) {
-        break
-      }
-
       // don't save in db just yet
       let inward_hl = Payment.build({
         // we either add add/addrisk or del right away
@@ -177,7 +171,7 @@ module.exports = async (
 
         asset: asset,
 
-        channelId: ch.d.id
+        channelId: ch.d.id,
       })
 
       ch.payments.push(inward_hl)
@@ -201,6 +195,19 @@ module.exports = async (
       // ensure to 'del' if there's any problem, or it will hang in your state forever
 
       // things below can happen even when partner is honest
+
+      if (amount < K.min_amount || amount > derived.they_available) {
+        l('Bad amount: ', amount, derived)
+        failure = 'AmountOverAvailable'
+      }
+      // these things CANT happen, partner is malicious so just ignore and break
+      if (hash.length != 32) {
+        failure = 'InvalidHashLength'
+      }
+      if (derived.inwards.length >= K.max_hashlocks) {
+        failure = 'TooManyHashlocks'
+      }
+
       if (!box_data) {
         failure = 'NoBox'
       }
@@ -292,7 +299,7 @@ module.exports = async (
           // we pass nested unlocker for them
           unlocker: fromHex(box_data.unlocker),
 
-          inward_pubkey: bin(pubkey)
+          inward_pubkey: bin(pubkey),
         })
         dest_ch.payments.push(outward_hl)
 
@@ -362,7 +369,7 @@ module.exports = async (
       }
 
       me.metrics[valid ? 'settle' : 'fail'].current++
-      
+
       refresh(ch)
       outward_hl.resulting_balance = ch.derived[asset].available
 
@@ -402,7 +409,7 @@ module.exports = async (
           pull_hl.outcome = outcome
           pull_hl.type = 'del'
           pull_hl.status = 'new'
-        
+
           // todo
           refresh(inward_ch)
           pull_hl.resulting_balance = inward_ch.derived[asset].available
@@ -435,7 +442,7 @@ module.exports = async (
             {
               payment_outcome: 'fail',
               alert:
-                'Payment failed, try another route: ' + outcome_type + outcome
+                'Payment failed, try another route: ' + outcome_type + outcome,
             },
             false
           )
@@ -469,7 +476,7 @@ module.exports = async (
 
     ch.d.status = 'merge'
   } else {
-    ch.d.status = 'master'
+    ch.d.status = 'main'
     ch.d.pending = null
   }
 

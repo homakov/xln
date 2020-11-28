@@ -32,7 +32,7 @@ react = async (result) => {
     result.payments = await Payment.findAll({
       order: [['id', 'desc']],
       //include: {all: true},
-      limit: 50
+      limit: 50,
     })
 
     //l('Payments')
@@ -50,7 +50,7 @@ react = async (result) => {
 
     me.record = await User.findOne({
       where: {pubkey: bin(me.id.publicKey)},
-      include: [Balance]
+      include: [Balance],
     })
     result.record = me.record
 
@@ -58,7 +58,7 @@ react = async (result) => {
 
     result.events = await Event.findAll({
       order: [['id', 'desc']],
-      limit: 20
+      limit: 20,
     })
 
     //if (!result.record.id) result.record = null
@@ -78,11 +78,8 @@ react = async (result) => {
 
     if (result.record) {
       // both our debts and to us
-      let filters = [
-        {userId: result.record.id},
-        {oweTo: result.record.id}
-      ]
-      
+      let filters = [{userId: result.record.id}, {oweTo: result.record.id}]
+
       result.debts = await Debt.findAll({where: {[Op.or]: filters}})
     }
 
@@ -130,7 +127,7 @@ snapshotHash = async () => {
       var our_location =
         me.my_validator.location.indexOf(localhost) != -1
           ? `http://${localhost}:8001/`
-          : `https://fairlayer.com/`
+          : `http://fairlayer.com/`
 
       cached_result.install_snippet = `id=fair
 f=${filename}
@@ -147,5 +144,5 @@ fi`
 // TODO: Move from memory to persistent DB
 cached_result = {
   history: [],
-  my_log: ''
+  my_log: '',
 }

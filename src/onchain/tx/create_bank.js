@@ -1,9 +1,6 @@
 const Router = require('../../router')
 
 module.exports = async (s, args) => {
-  // not enabled yet
-  return
-
   let json = parse(args.toString())
 
   if (!json.handle) return false
@@ -31,7 +28,7 @@ module.exports = async (s, args) => {
       handle: json.handle,
       name: json.handle,
 
-      createdAt: K.ts
+      createdAt: K.ts,
     }
 
     K.banks.push(bank)
@@ -47,7 +44,7 @@ module.exports = async (s, args) => {
         they_pubkey: bank.pubkey,
         asset: 1,
         rebalance: K.rebalance,
-        credit: K.credit
+        credit: K.credit,
       })
     }
   }

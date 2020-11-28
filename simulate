@@ -42,7 +42,7 @@ if node fair.js --genesis=test $db $global | grep "Genesis done"; then
     rsync -q -rva --exclude=offchain data/* data$i
   done
 
-  pm2 start $pm2_opts --name wallet yarn -- parcel serve wallet -p $wallet_port
+  pm2 start $pm2_opts --name wallet yarn -- parcel serve wallet/index.html -p $wallet_port
 
   fair_node_args="-p8433 --rebalance $global"
   pm2 start $pm2_opts --name fair8433 fair.js -- $fair_cluster_args $fair_node_args

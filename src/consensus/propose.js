@@ -12,9 +12,9 @@ module.exports = async () => {
     //l('Our turn to propose')
   }
 
-  //l(`it's our turn to propose, gossip new block`)
+  //l(`it's our turn to propose, gossip a new block`)
   if (K.ts < ts() - K.blocktime * 3) {
-    l('Danger: No previous block exists')
+    l('Warning: No previous block exists')
   }
 
   let header = false
@@ -22,7 +22,8 @@ module.exports = async () => {
 
   if (PK.locked_block) {
     l(`We precommited to previous block, keep proposing it`)
-    ;({header, ordered_tx_body} = PK.locked_block)
+    header = PK.locked_block.header
+    ordered_tx_body = PK.locked_block.ordered_tx_body
   } else {
     // otherwise build new block from your mempool
     let total_size = 0
@@ -31,7 +32,7 @@ module.exports = async () => {
 
     for (const candidate of me.mempool) {
       if (total_size + candidate.length >= K.blocksize) {
-        l(`The block is out of space, stop adding tx`)
+        l(`This block is full, flush other tx`)
         break
       }
 
@@ -41,7 +42,7 @@ module.exports = async () => {
         ordered_tx.push(candidate)
         total_size += candidate.length
       } else {
-        l(`Bad tx in mempool`, result, candidate)
+        l(`Bad tx in mempool`, result.error)
         // punish submitter ip
       }
     }
@@ -61,7 +62,7 @@ module.exports = async () => {
       Buffer.from(K.prev_hash, 'hex'),
       ts(),
       sha3(ordered_tx_body),
-      current_db_hash()
+      current_db_hash(),
     ])
     //}
   }
@@ -75,7 +76,7 @@ module.exports = async () => {
     bin(me.block_keypair.publicKey),
     bin(ec(header, me.block_keypair.secretKey)),
     header,
-    ordered_tx_body
+    ordered_tx_body,
   ])
 
   if (me.CHEAT_dontpropose) {

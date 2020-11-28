@@ -20,13 +20,13 @@ module.exports = async (pubkey, json, ws) => {
       me.send(ch.d.they_pubkey, {
         method: 'setLimits',
         asset: json.asset,
-        credit: subch.credit
+        credit: subch.credit,
       })
 
       await subch.save()
 
       // forced flush, gives them sig
-      await me.flushChannel(pubkey, false)
+      await me.flushChannel(pubkey, false, {from: 'requestCredit'})
 
       me.textMessage(
         ch.d.they_pubkey,
@@ -57,7 +57,7 @@ module.exports = async (pubkey, json, ws) => {
 
       let they = await User.findOne({
         where: {pubkey: ch.d.they_pubkey},
-        include: [Balance]
+        include: [Balance],
       })
       if (!they || !me.record) return l('no pair ', they, me.record)
 
@@ -70,7 +70,7 @@ module.exports = async (pubkey, json, ws) => {
         pair[1],
         ch.ins ? ch.ins.withdrawal_nonce : 0,
         amount,
-        asset
+        asset,
       ]
 
       if (!ec.verify(r(withdrawal), withdrawal_sig, pubkey)) {
@@ -93,8 +93,8 @@ module.exports = async (pubkey, json, ws) => {
         return l('CHEAT_dontwithdraw')
       }
 
-      if (ch.d.status != 'master') {
-        return l('only return withdrawal to master status')
+      if (ch.d.status != 'main') {
+        return l('only return withdrawal to main status')
       }
 
       if (!ch.ins) {
@@ -107,15 +107,15 @@ module.exports = async (pubkey, json, ws) => {
       let asset = parseInt(json.asset)
       // TODO: don't forget hold
 
-
       // if we're bank, we let to withdraw from our onchain as well
       // otherwise we let bank to withdraw only from their insured side
       if (me.my_bank) {
         var available = ch.derived[asset].they_available
       } else {
-        // if we'd let banks to withdraw they_available, 
+        // if we'd let banks to withdraw they_available,
         // their compromise would lead to a disaster of failed credit
-        var available = ch.derived[asset].they_insured - ch.derived[asset].inwards_hold
+        var available =
+          ch.derived[asset].they_insured - ch.derived[asset].inwards_hold
       }
 
       if (amount > available) {
@@ -128,7 +128,8 @@ module.exports = async (pubkey, json, ws) => {
       }
 
       // technically withdrawable: our onchain + insurance size
-      let withdrawable = ch.derived[asset].they_insured + userAsset(me.record, asset)
+      let withdrawable =
+        ch.derived[asset].they_insured + userAsset(me.record, asset)
       if (amount == 0 || amount > withdrawable) {
         me.textMessage(
           ch.d.they_pubkey,
@@ -148,7 +149,7 @@ module.exports = async (pubkey, json, ws) => {
         ch.ins.rightId,
         ch.ins.withdrawal_nonce,
         amount,
-        asset
+        asset,
       ])
 
       await subch.save()
@@ -157,7 +158,7 @@ module.exports = async (pubkey, json, ws) => {
         method: 'giveWithdrawal',
         withdrawal_sig: ec(withdrawal, me.id.secretKey),
         amount: amount,
-        asset: asset
+        asset: asset,
       })
     } else if (json.method == 'testnet') {
       if (json.action == 'faucet') {
@@ -165,14 +166,14 @@ module.exports = async (pubkey, json, ws) => {
           'You are welcome!',
           'Demo',
           "It's free money!",
-          '\'"><'
+          '\'"><',
         ].randomElement()
 
         let pay = {
           address: json.address,
           amount: json.amount,
           private_invoice: friendly_invoice,
-          asset: json.asset
+          asset: json.asset,
         }
 
         await me.payChannel(pay)
@@ -192,7 +193,8 @@ module.exports = async (pubkey, json, ws) => {
         r(fromHex(json.ackState)),
         fromHex(json.ackSig),
         json.transitions,
-        json.signedState
+        json.signedState,
+        json
       )
     })
 
@@ -203,7 +205,7 @@ module.exports = async (pubkey, json, ws) => {
   Sometimes sender is already included in flushable, so don't flush twice
   */
 
-    let flushed = [me.flushChannel(pubkey, json.transitions.length == 0)]
+    let flushed = [me.flushChannel(pubkey, json.transitions.length == 0, json)]
 
     if (flushable) {
       for (let fl of flushable) {

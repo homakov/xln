@@ -18,7 +18,7 @@ resolveChannel = (insurance, delta, is_left = true) => {
     they_insured:
       delta > insurance ? 0 : delta > 0 ? insurance - delta : insurance,
     // right user promises when delta > insurance, scenario 1
-    uninsured: delta > insurance ? delta - insurance : 0
+    uninsured: delta > insurance ? delta - insurance : 0,
   }
 
   var total =
@@ -54,14 +54,16 @@ resolveChannel = (insurance, delta, is_left = true) => {
       parts.they_uninsured,
       parts.insured,
       parts.they_insured,
-      parts.uninsured
+      parts.uninsured,
     ] = [
       parts.uninsured,
       parts.they_insured,
       parts.insured,
-      parts.they_uninsured
+      parts.they_uninsured,
     ]
   }
+
+  parts.is_left = is_left
 
   return parts
 }
@@ -70,7 +72,7 @@ const paymentToLock = (payment) => {
   return [payment.amount, payment.hash, payment.exp]
 }
 
-refresh = function(ch) {
+refresh = function (ch) {
   // Canonical state.
   // To be parsed in case of a dispute onchain
   ch.state = [
@@ -78,10 +80,10 @@ refresh = function(ch) {
     [
       ch.d.isLeft() ? me.pubkey : ch.d.they_pubkey,
       ch.d.isLeft() ? ch.d.they_pubkey : me.pubkey,
-      ch.d.dispute_nonce
+      ch.d.dispute_nonce,
     ],
     // assetId, offdelta, leftlocks, rightlocks
-    []
+    [],
   ]
 
   for (let subch of ch.d.subchannels) {
@@ -95,7 +97,7 @@ refresh = function(ch) {
       credit: subch.credit,
       they_credit: subch.they_credit,
 
-      subch: subch
+      subch: subch,
     }
     // find the according subinsurance for subchannel
     let subins
@@ -115,7 +117,7 @@ refresh = function(ch) {
       let in_state = [
         'addack',
         'delnew',
-        ch.d.rollback_nonce > 0 ? 'delsent' : 'addsent'
+        ch.d.rollback_nonce > 0 ? 'delsent' : 'addsent',
       ]
 
       if (in_state.includes(typestatus)) {
@@ -164,7 +166,8 @@ refresh = function(ch) {
 
     if (out.available < 0 || out.they_available < 0) {
       l('Invalid availables', JSON.stringify(out, null, 4))
-      fatal('invalid outs')
+      //return
+      //fatal('invalid outs')
     }
 
     // All stuff we show in the progress bar in the wallet
@@ -175,7 +178,7 @@ refresh = function(ch) {
       subch.asset,
       encodeSignedInt(subch.offdelta),
       out[ch.d.isLeft() ? 'inwards' : 'outwards'].map((t) => paymentToLock(t)),
-      out[ch.d.isLeft() ? 'outwards' : 'inwards'].map((t) => paymentToLock(t))
+      out[ch.d.isLeft() ? 'outwards' : 'inwards'].map((t) => paymentToLock(t)),
     ])
 
     ch.derived[subch.asset] = out
@@ -197,7 +200,7 @@ refresh = function(ch) {
   return ch.state
 }
 
-saveId = async function(obj) {
+saveId = async function (obj) {
   // only save if it has no id now
   //if (!obj.id) {
   await obj.save()

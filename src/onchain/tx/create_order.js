@@ -1,5 +1,4 @@
 module.exports = async (s, args) => {
-  // not enabled yet
   return
 
   // onchain exchange to sell an asset for another one.
@@ -23,7 +22,7 @@ module.exports = async (s, args) => {
     rate: rate,
     userId: s.signer.id,
     assetId: assetId,
-    buyAssetId: buyAssetId
+    buyAssetId: buyAssetId,
   })
 
   // now let's try orders with same rate or better
@@ -33,11 +32,11 @@ module.exports = async (s, args) => {
       buyAssetId: assetId,
       rate: {
         // depending on which side of pair we sell, different order
-        [direct_order ? Op.gte : Op.lte]: rate
-      }
+        [direct_order ? Op.gte : Op.lte]: rate,
+      },
     },
     limit: 500,
-    order: [['rate', direct_order ? 'desc' : 'asc']]
+    order: [['rate', direct_order ? 'desc' : 'asc']],
   })
 
   for (const their of orders) {
@@ -53,7 +52,7 @@ module.exports = async (s, args) => {
 
     //l('Suitable order', we_buy, they_buy, their)
 
-    const seller = await User.findById(their.userId, {include: [Balance]})
+    const seller = await User.findByPk(their.userId, {include: [Balance]})
     if (we_buy > their.amount) {
       // close their order. give seller what they wanted
       userAsset(seller, their.buyAssetId, they_buy)

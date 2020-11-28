@@ -8,7 +8,7 @@ const defineModels = (sequelize) => {
       id: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
-        primaryKey: true
+        primaryKey: true,
       },
 
       //  /^(\w){1,15}$/)
@@ -17,19 +17,19 @@ const defineModels = (sequelize) => {
       // saves time to select Debts
       has_debts: {
         type: Sequelize.BOOLEAN,
-        defaultValue: false
+        defaultValue: false,
       },
 
       pubkey: Sequelize.CHAR(32).BINARY,
 
-      batch_nonce: {type: Sequelize.INTEGER, defaultValue: 0}
+      batch_nonce: {type: Sequelize.INTEGER, defaultValue: 0},
     },
     {
       indexes: [
         {
-          fields: [{attribute: 'pubkey', length: 32}]
-        }
-      ]
+          fields: [{attribute: 'pubkey', length: 32}],
+        },
+      ],
     }
   )
 
@@ -50,14 +50,14 @@ const defineModels = (sequelize) => {
       // actual state proposed, rlp-encoded
       dispute_state: Sequelize.TEXT,
       // started by left user?
-      dispute_left: Sequelize.BOOLEAN
+      dispute_left: Sequelize.BOOLEAN,
     },
     {
       indexes: [
         {
-          fields: ['leftId', 'rightId']
-        }
-      ]
+          fields: ['leftId', 'rightId'],
+        },
+      ],
     }
   )
 
@@ -69,14 +69,14 @@ const defineModels = (sequelize) => {
       balance: {type: Sequelize.BIGINT, defaultValue: 0},
 
       // moved when touched by left user
-      ondelta: {type: Sequelize.BIGINT, defaultValue: 0}
+      ondelta: {type: Sequelize.BIGINT, defaultValue: 0},
     },
     {
       indexes: [
         {
-          fields: ['asset']
-        }
-      ]
+          fields: ['asset'],
+        },
+      ],
     }
   )
 
@@ -87,30 +87,30 @@ const defineModels = (sequelize) => {
 
     delayed: Sequelize.INTEGER, //cron
 
-    kindof: Sequelize.STRING
+    kindof: Sequelize.STRING,
   })
 
   const Vote = sequelize.define('vote', {
     rationale: Sequelize.TEXT,
-    approval: Sequelize.BOOLEAN // approval or denial
+    approval: Sequelize.BOOLEAN, // approval or denial
   })
 
   const Debt = sequelize.define('debt', {
     asset: Sequelize.INTEGER,
     amount_left: Sequelize.INTEGER,
-    oweTo: Sequelize.INTEGER
+    oweTo: Sequelize.INTEGER,
   })
 
   // onchain balances (w/o bank)
   const Balance = sequelize.define('balance', {
     asset: {type: Sequelize.INTEGER, defaultValue: 1},
 
-    balance: {type: Sequelize.BIGINT, defaultValue: 0}
+    balance: {type: Sequelize.BIGINT, defaultValue: 0},
   })
 
   const Order = sequelize.define('order', {
     amount: Sequelize.INTEGER,
-    rate: Sequelize.FLOAT
+    rate: Sequelize.FLOAT,
   })
 
   // Hashlocks is like an evidence guarantee: if you have the secret before exp you unlock the action
@@ -122,14 +122,14 @@ const defineModels = (sequelize) => {
       alg: Sequelize.INTEGER, // sha256, sha3?
       hash: Sequelize.BLOB,
       revealed_at: Sequelize.INTEGER,
-      delete_at: Sequelize.INTEGER
+      delete_at: Sequelize.INTEGER,
     },
     {
       indexes: [
         {
-          fields: [{attribute: 'hash', length: 32}]
-        }
-      ]
+          fields: [{attribute: 'hash', length: 32}],
+        },
+      ],
     }
   )
 
@@ -145,7 +145,7 @@ const defineModels = (sequelize) => {
 
     issuable: Sequelize.BOOLEAN,
     issuerId: Sequelize.INTEGER,
-    total_supply: Sequelize.INTEGER
+    total_supply: Sequelize.INTEGER,
   })
 
   Insurance.hasMany(Subinsurance)
@@ -179,7 +179,7 @@ const defineModels = (sequelize) => {
     Order: Order,
     Hashlock: Hashlock,
     Asset: Asset,
-    Balance: Balance
+    Balance: Balance,
   }
 }
 
@@ -195,9 +195,9 @@ const getDBConfig = (datadir) => {
     dialect: 'sqlite',
     storage: fullPath,
     define: {timestamps: false},
-    operatorsAliases: false,
+
     logging: logger,
-    benchmark: true
+    benchmark: true,
   }
 
   const database = ''

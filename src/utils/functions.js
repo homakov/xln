@@ -42,7 +42,7 @@ const parseAddress = async (address) => {
 
   if (parts[0] && parts[0].length <= 6) {
     // not pubkey? can be an id and we find out real pubkey
-    let u = await User.findById(readInt(parts[0]), {include: [Balance]})
+    let u = await User.findByPk(readInt(parts[0]), {include: [Balance]})
     if (u) {
       parts[0] = u.pubkey
     }
@@ -55,7 +55,7 @@ const parseAddress = async (address) => {
       box_pubkey: parts[1],
       banks: parts[2],
       invoice: invoice,
-      address: addr
+      address: addr,
     }
   } else {
     l('bad address: ', stringify(addr))
@@ -82,7 +82,7 @@ const loadPKFile = (datadir) => {
     // used to authenticate browser sessions to this daemon
     return {
       auth_code: toHex(crypto.randomBytes(32)),
-      pendingBatchHex: null
+      pendingBatchHex: null,
     }
   }
 
@@ -138,20 +138,20 @@ const setupDirectories = (datadir) => {
   }
 }
 
-const getSubchannel = async function(ch, asset = 1) {
+const getSubchannel = async function (ch, asset = 1) {
   let found = ch.d.subchannels.find((s) => s.asset == asset)
 
   if (found) {
     return found
   } else {
     found = await ch.d.createSubchannel({
-      asset: asset
+      asset: asset,
     })
     return found
   }
 }
 
-const getInsuranceBetween = async function(user1, user2) {
+const getInsuranceBetween = async function (user1, user2) {
   if (
     user1.pubkey.length != 32 ||
     user2.pubkey.length != 32 ||
@@ -166,17 +166,19 @@ const getInsuranceBetween = async function(user1, user2) {
 
   const wh = {
     leftId: compared == -1 ? user1.id : user2.id,
-    rightId: compared == -1 ? user2.id : user1.id
+    rightId: compared == -1 ? user2.id : user1.id,
   }
   const str = stringify([wh.leftId, wh.rightId])
 
   //if (cache.ins[str]) return cache.ins[str]
 
-  let ins = (await Insurance.findOrBuild({
-    where: wh,
-    defaults: {subinsurances: []}, //needed to get [] attr
-    include: [Subinsurance]
-  }))[0]
+  let ins = (
+    await Insurance.findOrBuild({
+      where: wh,
+      defaults: {subinsurances: []}, //needed to get [] attr
+      include: [Subinsurance],
+    })
+  )[0]
 
   /*
 
@@ -190,20 +192,20 @@ const getInsuranceBetween = async function(user1, user2) {
 // you cannot really reason about who owns what by looking at onchain db only (w/o offdelta)
 // but the banks with higher sum(insurance) locked around them are more trustworthy
 // and users probably own most part of insurances around them
-const getInsuranceSumForUser = async function(id, asset = 1) {
+const getInsuranceSumForUser = async function (id, asset = 1) {
   return 0
 
   const sum = await Insurance.sum('insurance', {
     where: {
       [Op.or]: [{leftId: id}, {rightId: id}],
-      asset: asset
-    }
+      asset: asset,
+    },
   })
 
   return Math.max(sum, 0)
 }
 
-const getUserByIdOrKey = async function(id) {
+const getUserByIdOrKey = async function (id) {
   if (typeof id != 'number' && id.length != 32) {
     id = readInt(id)
   }
@@ -226,15 +228,17 @@ const getUserByIdOrKey = async function(id) {
   */
 
   if (typeof id == 'number') {
-    u = await User.findById(id, {include: [Balance]})
+    u = await User.findByPk(id, {include: [Balance]})
   } else {
     // buffer
 
-    u = (await User.findOrBuild({
-      where: {pubkey: id},
-      defaults: {balances: []}, //needed to get [] attr
-      include: [Balance]
-    }))[0]
+    u = (
+      await User.findOrBuild({
+        where: {pubkey: id},
+        defaults: {balances: []}, //needed to get [] attr
+        include: [Balance],
+      })
+    )[0]
   }
 
   /*
@@ -259,7 +263,7 @@ const userAsset = (user, asset, diff) => {
       b = Balance.build({
         userId: user.id,
         asset: asset,
-        balance: diff
+        balance: diff,
       })
       user.balances.push(b)
 
@@ -278,7 +282,7 @@ const userPayDebts = async (user, asset, parsed_tx) => {
   const debts = await user.getDebts({where: {asset: asset}})
 
   for (const d of debts) {
-    var u = await User.findById(d.oweTo, {include: [Balance]})
+    var u = await User.findByPk(d.oweTo, {include: [Balance]})
 
     // FRD cannot be enforced below safety limit,
     // otherwise the nodes won't be able to send onchain tx
@@ -321,8 +325,8 @@ let findRevealed = async (locks) => {
   for (var lock of locks) {
     var hl = await Hashlock.findOne({
       where: {
-        hash: lock[1]
-      }
+        hash: lock[1],
+      },
     })
 
     if (hl) {
@@ -339,11 +343,9 @@ let findRevealed = async (locks) => {
 }
 
 const insuranceResolve = async (ins) => {
-
   if (!ins.dispute_state) {
-    return l("No dispute_state to resolve")
+    return l('No dispute_state to resolve')
   }
-
 
   var left = await getUserByIdOrKey(ins.leftId)
   var right = await getUserByIdOrKey(ins.rightId)
@@ -355,19 +357,14 @@ const insuranceResolve = async (ins) => {
     let asset = readInt(subch[0])
     let subins = ins.subinsurances.by('asset', asset)
 
-    let delta = (subins ? subins.ondelta : 0)
+    let delta = subins ? subins.ondelta : 0
     delta += readInt(subch[1], true) //offdelta
 
     // revealed in time hashlocks are applied to delta
     delta += await findRevealed(subch[2])
     delta -= await findRevealed(subch[3])
 
-
-    var resolved = resolveChannel(
-      subins ? subins.balance : 0,
-      delta,
-      true
-    )
+    var resolved = resolveChannel(subins ? subins.balance : 0, delta, true)
     resolved.asset = asset
 
     // splitting insurance between users
@@ -390,7 +387,7 @@ const insuranceResolve = async (ins) => {
           asset: asset,
           userId: debtor.id,
           oweTo: oweTo.id,
-          amount_left: amount_left
+          amount_left: amount_left,
         })
       }
     }
@@ -399,15 +396,18 @@ const insuranceResolve = async (ins) => {
     if (resolved.uninsured > 0) {
       resolved.debt = await payOrDebt(asset, right, left, resolved.uninsured)
     } else if (resolved.they_uninsured > 0) {
-      resolved.they_debt = await payOrDebt(asset, left, right, resolved.they_uninsured)      
+      resolved.they_debt = await payOrDebt(
+        asset,
+        left,
+        right,
+        resolved.they_uninsured
+      )
     }
-
 
     if (subins) {
       // zeroify now
       await subins.destroy()
     }
-
 
     allResolved.push(resolved)
   }
@@ -424,8 +424,8 @@ const insuranceResolve = async (ins) => {
   var withUs = me.is_me(left.pubkey)
     ? right
     : me.is_me(right.pubkey)
-      ? left
-      : false
+    ? left
+    : false
 
   // are we in this dispute? Unfreeze the channel
   if (withUs) {
@@ -444,14 +444,14 @@ const insuranceResolve = async (ins) => {
     }
 
     // reset disputed status and ack timestamp
-    ch.d.status = 'master'
+    ch.d.status = 'main'
     ch.d.ack_requested_at = null
     await saveId(ch.d)
 
     me.addEvent({
       type: 'disputeResolved',
       ins: ins,
-      outcomes: allResolved
+      outcomes: allResolved,
     })
   }
 
@@ -527,5 +527,5 @@ module.exports = {
   insuranceResolve: insuranceResolve,
   proposalExecute: proposalExecute,
   startDispute: startDispute,
-  deltaVerify: deltaVerify
+  deltaVerify: deltaVerify,
 }

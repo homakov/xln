@@ -56,7 +56,7 @@ module.exports = async (ws, msg) => {
           'requestCredit',
           'giveWithdrawal',
           'requestWithdrawal',
-          'testnet'
+          'testnet',
         ].includes(json.method)
       ) {
         require('./with_channel')(pubkey, json, ws)

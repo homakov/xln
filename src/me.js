@@ -18,6 +18,8 @@ class Me {
 
     this.busyPorts = [] // for cloud demos
 
+    this.leak_channels_ws = []
+
     this.withdrawalRequests = {}
 
     this.show_empty_blocks = true
@@ -34,7 +36,7 @@ class Me {
         total: 0,
         current: 0,
         last_avg: 0,
-        avgs: []
+        avgs: [],
       }
     }
 
@@ -47,13 +49,12 @@ class Me {
 
       //
       bandwidth: getMetric(),
-      ecverify: getMetric()
+      ecverify: getMetric(),
     }
     cached_result.metrics = this.metrics
 
     // used to store current block to be added to chain
-    this.proposed_block = null
-    this.locked_block = null
+    this.proposed_block = false
   }
 
   // derives needed keys from the seed, saves creds into pk.json
@@ -71,6 +72,8 @@ class Me {
 
     PK.username = username
     PK.seed = seed.toString('hex')
+    PK.pubkey = this.pubkey.toString('hex')
+
     PK.usedBanks = [1]
     PK.usedAssets = [1, 2]
 
@@ -81,19 +84,21 @@ class Me {
         they_pubkey: K.banks[0].pubkey,
         asset: 1,
         rebalance: K.rebalance,
-        credit: K.credit
+        credit: K.credit,
       })
     }
 
     await promise_writeFile(datadir + '/offchain/pk.json', JSON.stringify(PK))
   }
 
+  leakChannels() {}
+
   // returns current address: pubkey, box_pubkey, banks
   getAddress() {
     let encodable = [
       me.record ? me.record.id : this.pubkey,
       bin(this.box.publicKey),
-      PK.usedBanks
+      PK.usedBanks,
     ]
     return base58.encode(r(encodable))
   }
@@ -106,7 +111,7 @@ class Me {
   addEvent(data) {
     Event.create({
       blockId: K.total_blocks,
-      data: stringify(data)
+      data: stringify(data),
     })
   }
 
@@ -129,7 +134,7 @@ class Me {
         // create new set, withdrawals go first
         me.batch[method == 'withdraw' ? 'unshift' : 'push']([
           method,
-          [args[0], [args[1]]]
+          [args[0], [args[1]]],
         ])
       }
     } else if (method == 'revealSecrets') {
@@ -178,7 +183,7 @@ class Me {
       me.record.batch_nonce,
       gaslimit,
       gasprice,
-      merged
+      merged,
     ])
     let signed_batch = r([me.record.id, ec(to_sign, me.id.secretKey), to_sign])
 
@@ -186,7 +191,7 @@ class Me {
       signed_batch: signed_batch,
       size: to_sign.length,
       batch_nonce: me.record.batch_nonce,
-      batch_body: merged
+      batch_body: merged,
     }
   }
 
@@ -208,7 +213,7 @@ class Me {
     return r([
       bin(me.block_keypair.publicKey),
       ec(msg, me.block_keypair.secretKey),
-      msg
+      msg,
     ])
   }
 
@@ -216,7 +221,7 @@ class Me {
     // in json pubkeys are in hex
     me.record = await User.findOne({
       where: {pubkey: bin(me.id.publicKey)},
-      include: [Balance]
+      include: [Balance],
     })
 
     if (me.record) {
@@ -271,12 +276,12 @@ class Me {
       return l('Cannot start rpc on ', advertized_url)
     }
 
-    if (me.external_wss_server) {
+    if (me.external_http_server) {
       return l('Already have external server started')
     }
     // there's 2nd dedicated websocket server for validator/bank commands
 
-    me.external_wss_server = require('http').createServer(async (req, res) => {
+    me.external_http_server = require('http').createServer(async (req, res) => {
       var [path, query] = req.url.split('?')
       // call /faucet?address=ME&amount=100&asset=1
       if (path.startsWith('/faucet')) {
@@ -288,31 +293,34 @@ class Me {
         let status = await me.payChannel({
           address: args.address,
           amount: parseInt(args.amount),
-          asset: parseInt(args.asset)
+          asset: parseInt(args.asset),
         })
         res.end(status)
       }
     })
 
     var port = parseInt(advertized_url.split(':')[2])
-    me.external_wss_server.listen(on_server ? port + 200 : port)
+    me.external_http_server.listen(on_server ? port : port)
 
     l(`Bootstrapping external_wss at: ${advertized_url}`)
 
     // lowtps/hightps
-    me.external_wss = new (base_port == 8433 ? require('uws') : ws).Server({
+
+    //new (base_port == 8433 && false
+    // ? require('uws')
+    me.external_wss = new ws.Server({
       //noServer: true,
       //port: port,
       clientTracking: false,
       perMessageDeflate: false,
-      server: me.external_wss_server,
-      maxPayload: 64 * 1024 * 1024
+      server: me.external_http_server,
+      maxPayload: 64 * 1024 * 1024,
     })
 
-    me.external_wss.on('error', function(err) {
+    me.external_wss.on('error', function (err) {
       l(err)
     })
-    me.external_wss.on('connection', function(ws) {
+    me.external_wss.on('connection', function (ws) {
       ws.on('message', (msg) => {
         RPC.external_rpc(ws, msg)
       })
@@ -335,7 +343,7 @@ class Me {
         methodMap('JSON'),
         bin(me.id.publicKey),
         bin(ec(msg, me.id.secretKey)),
-        msg
+        msg,
       ])
     } else {
       msg = r([methodMap('JSON'), null, null, msg])
@@ -380,10 +388,11 @@ class Me {
         RPC.external_rpc(me.sockets[m.pubkey], msg)
       }
 
-      me.sockets[m.pubkey].onerror = function(e) {
-        l('Failed to open the socket to ', m)
+      me.sockets[m.pubkey].onerror = function (e) {
+        l('Failed to open the socket to ', m, e)
+        delete me.sockets[m.pubkey]
       }
-      me.sockets[m.pubkey].onopen = function(e) {
+      me.sockets[m.pubkey].onopen = function (e) {
         if (me.id) {
           me.send(m.pubkey, {method: 'auth', data: ts()})
         }

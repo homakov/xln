@@ -4,20 +4,20 @@ const Router = {
   // We don't want to deliberately burn money, right?
   max_fee: 0.9,
 
-  getRouteIndex: function(from, to) {
+  getRouteIndex: function (from, to) {
     // returns an index of a bidirectional route (from,to or to,from)
     return K.routes.findIndex((r) => {
       return (r[0] == from && r[1] == to) || (r[0] == to && r[1] == from)
     })
   },
 
-  addRoute: function(from, to) {
+  addRoute: function (from, to) {
     // ensure only unique routes are saved
     if (this.getRouteIndex(from, to) == -1) {
       K.routes.push([from, to])
     }
   },
-  removeRoute: function(from, to) {
+  removeRoute: function (from, to) {
     // only existing routes can be removed
     let index = this.getRouteIndex(from, to)
     if (index != -1) {
@@ -25,7 +25,7 @@ const Router = {
     }
   },
   //https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
-  dijkstra: function(c) {
+  dijkstra: function (c) {
     //l('Dijkstra', c)
     // gets context on input
     let last = c.used[c.used.length - 1]
@@ -51,7 +51,7 @@ const Router = {
   },
 
   // returns sorted and filtered routes to some nodes for specific asset/amount
-  bestRoutes: async function(address, args) {
+  bestRoutes: async function (address, args) {
     let addr = await parseAddress(address)
     if (!addr) return []
 
@@ -91,7 +91,7 @@ const Router = {
       this.dijkstra({
         targets: toArray,
         used: [from],
-        found: found
+        found: found,
       })
     }
 
@@ -129,7 +129,7 @@ const Router = {
 
     // sort by fee
     return filtered.sort((a, b) => a[0] - b[0])
-  }
+  },
 }
 
 module.exports = Router

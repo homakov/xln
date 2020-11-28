@@ -10,16 +10,16 @@ const createValidator = async (username, pw, loc, website) => {
 
   const user = await User.create({
     pubkey: me.pubkey,
-    username: username
+    username: username,
   })
 
   await user.createBalance({
     asset: 1,
-    balance: 10000000000
+    balance: 10000000000,
   })
   await user.createBalance({
     asset: 2,
-    balance: 10000000000
+    balance: 10000000000,
   })
 
   const validator = {
@@ -31,7 +31,7 @@ const createValidator = async (username, pw, loc, website) => {
     box_pubkey: toHex(bin(me.box.publicKey)),
     block_pubkey: me.block_pubkey,
     missed_blocks: [],
-    shares: 0
+    shares: 0,
   }
 
   return [validator, seed]
@@ -56,9 +56,9 @@ module.exports = async (datadir) => {
     // Things that are different in testnet vs mainnet
     network_name: 'testnet',
     blocksize: 20000,
-    blocktime: 10 * sec,
-    step_latency: 2 * sec, // how long is each consensus step: propose, prevote, precommit, await is the rest
-    gossip_delay: 1 * sec, // anti clock skew, give others time to change state
+    blocktime: 5 * sec,
+    step_latency: 1 * sec, // how long is each consensus step: propose, prevote, precommit, await is the rest
+    gossip_delay: 0.5 * sec, // anti clock skew, give others time to change state
 
     //Time.at(1913370000) => 2030-08-19 20:40:00 +0900
 
@@ -102,8 +102,8 @@ module.exports = async (datadir) => {
 
     risk: 10000, // banks usually withdraw after this amount
 
-    credit: 50000000, // how much can a user lose if bank is insolvent?
-    rebalance: 5000000, // rebalance after
+    credit: 1000000, // how much can a user lose if bank is insolvent?
+    rebalance: 300000, // rebalance after
 
     collected_fees: 0,
 
@@ -139,7 +139,7 @@ module.exports = async (datadir) => {
     hashlock_service_fee: 100, // the one who adds hashlock pays for it
 
     // ensure it is much shorter than hashlock_exp
-    dispute_if_no_ack: 60 * sec // how long we wait for ack before going to blockchain
+    dispute_if_no_ack: 60 * sec, // how long we wait for ack before going to blockchain
   }
 
   // Defines global Byzantine tolerance parameter
@@ -153,8 +153,8 @@ module.exports = async (datadir) => {
 
   const local = !argv['prod-server']
 
-  const base_rpc = local ? 'ws://' + localhost : 'wss://fairlayer.com'
-  const base_web = local ? 'http://' + localhost : 'https://fairlayer.com'
+  const base_rpc = local ? 'ws://' + localhost : 'ws://188.120.244.199'
+  const base_web = local ? 'http://' + localhost : 'http://fairlayer.com'
 
   // validators provide services: 1) build blocks 2) banks 3) watchers 4) storage of vaults
   l(note('New validators:'))
@@ -164,7 +164,7 @@ module.exports = async (datadir) => {
     'root',
     toHex(crypto.randomBytes(16)),
     `${base_rpc}:8100`,
-    local ? 'http://' + localhost + ':8433' : 'https://fairlayer.com'
+    local ? 'http://' + localhost + ':8433' : 'http://fairlayer.com'
   )
   K.validators.push(bankValidator)
 
@@ -187,28 +187,28 @@ module.exports = async (datadir) => {
 
     let ins = await Insurance.create({
       leftId: left ? validator.id : 1,
-      rightId: left ? 1 : validator.id
+      rightId: left ? 1 : validator.id,
     })
 
     ins.createSubinsurance({
       asset: 1,
       balance: 1000000,
-      ondelta: left ? 1000000 : 0
+      ondelta: left ? 1000000 : 0,
     })
   }
 
   // distribute shares
   K.validators[0].shares = 1
-  K.validators[0].platform = 'Digital Ocean SGP1'
+  K.validators[0].platform = 'Moscow'
 
   K.validators[1].shares = 1
-  K.validators[1].platform = 'AWS'
+  K.validators[1].platform = 'London'
 
   K.validators[2].shares = 1
-  K.validators[2].platform = 'Azure'
+  K.validators[2].platform = 'Tokyo'
 
   K.validators[3].shares = 1
-  K.validators[3].platform = 'Google Cloud'
+  K.validators[3].platform = 'New York'
 
   // set bank
   K.banks.push({
@@ -217,18 +217,15 @@ module.exports = async (datadir) => {
     pubkey: K.validators[0].pubkey,
     box_pubkey: K.validators[0].box_pubkey,
 
-    website: 'https://fairlayer.com',
+    website: 'http://fairlayer.com',
     // basis points
     fee_bps: 10,
     createdAt: ts(),
 
-    handle: 'Firstbank'
+    handle: 'Firstbank',
   })
 
-  // similar to https://en.wikipedia.org/wiki/Nostro_and_vostro_accounts
-  // in fairlayer both parties are equally non-custodial (no one "holds" an account in another party)
-  // we don't expect more than 1-10k of banks any time soon (there are about 10,000 traditional banks in the world)
-  // so in-JSON storage is fine
+  // list of https://en.wikipedia.org/wiki/Nostro_and_vostro_accounts
   K.routes = []
 
   global.K = K
@@ -279,7 +276,7 @@ module.exports = async (datadir) => {
     name: 'Fair dollar',
     desc: 'FRD',
     issuerId: 1,
-    total_supply: 1000000000
+    total_supply: 1000000000,
   })
 
   await Asset.create({
@@ -288,7 +285,7 @@ module.exports = async (datadir) => {
     desc:
       'Capped at 100 billions, will be automatically converted into FRD 1-for-1 on 2030-08-19.',
     issuerId: 1,
-    total_supply: 1000000000
+    total_supply: 1000000000,
   })
 
   // private config
@@ -300,16 +297,14 @@ module.exports = async (datadir) => {
     pendingBatchHex: null,
 
     usedBanks: [1],
-    usedAssets: [1, 2]
+    usedAssets: [1, 2],
   }
 
   await writeGenesisOnchainConfig(K, datadir)
   await writeGenesisOffchainConfig(PK, datadir)
 
   l(
-    `Genesis done (${datadir}). Banks ${K.banks.length}, routes ${
-      K.routes.length
-    }, quitting`
+    `Genesis done (${datadir}). Banks ${K.banks.length}, routes ${K.routes.length}, quitting`
   )
 
   // not graceful to not trigger hooks

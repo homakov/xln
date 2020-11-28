@@ -1,7 +1,4 @@
 module.exports = async (s, args) => {
-  // not enabled yet
-  return
-
   const [raw_ticker, raw_amount, raw_name, raw_desc] = args
   let amount = readInt(raw_amount)
   const ticker = raw_ticker.toString().replace(/[^a-zA-Z0-9]/g, '') // from buffer to unicode, sanitize
@@ -30,7 +27,7 @@ module.exports = async (s, args) => {
       total_supply: amount,
 
       name: raw_name ? raw_name.toString() : '',
-      desc: raw_desc ? raw_desc.toString() : ''
+      desc: raw_desc ? raw_desc.toString() : '',
     })
 
     K.assets_created++
@@ -39,7 +36,7 @@ module.exports = async (s, args) => {
     s.parsed_tx.events.push([
       'createAsset',
       new_asset.ticker,
-      new_asset.total_supply
+      new_asset.total_supply,
     ])
   }
 }

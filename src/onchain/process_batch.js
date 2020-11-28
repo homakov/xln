@@ -14,7 +14,7 @@ const Tx = {
   createBank: require('./tx/create_bank'),
 
   propose: require('./tx/propose'),
-  vote: require('./tx/vote')
+  vote: require('./tx/vote'),
 }
 
 Tx.revealSecrets = async (s, args) => {
@@ -24,8 +24,8 @@ Tx.revealSecrets = async (s, args) => {
     const hash = sha3(secret)
     const hl = await Hashlock.findOne({
       where: {
-        hash: hash
-      }
+        hash: hash,
+      },
     })
 
     if (hl) {
@@ -37,7 +37,7 @@ Tx.revealSecrets = async (s, args) => {
         hash: hash,
         revealed_at: K.usable_blocks,
         // we don't want the evidence to be stored forever, obviously
-        delete_at: K.usable_blocks + K.hashlock_keepalive
+        delete_at: K.usable_blocks + K.hashlock_keepalive,
       })
       s.parsed_tx.events.push(['revealSecrets', hash])
     }
@@ -59,7 +59,7 @@ Tx.cancelOrder = async (s, args) => {
 module.exports = async (s, batch) => {
   let [id, sig, body] = r(batch)
 
-  s.signer = await User.findById(readInt(id), {include: [Balance]})
+  s.signer = await User.findByPk(readInt(id), {include: [Balance]})
 
   if (!s.signer || !s.signer.id) {
     l(id, s.signer)
@@ -75,7 +75,7 @@ module.exports = async (s, batch) => {
     methodId,
     batch_nonce,
     gaslimit,
-    gasprice
+    gasprice,
   ].map((val) => readInt(val))
 
   if (methodMap(methodId) != 'batch') {
@@ -104,14 +104,12 @@ module.exports = async (s, batch) => {
       return {
         signer: s.signer,
         batch_nonce: batch_nonce,
-        error: 'Only 1 tx per block per user allowed'
+        error: 'Only 1 tx per block per user allowed',
       }
     } else {
       if (s.signer.batch_nonce != batch_nonce) {
         return {
-          error: `Invalid batch_nonce dry_run ${
-            s.signer.batch_nonce
-          } vs ${batch_nonce}`
+          error: `Invalid batch_nonce dry_run ${s.signer.batch_nonce} vs ${batch_nonce}`,
         }
       }
 
@@ -123,7 +121,7 @@ module.exports = async (s, batch) => {
   } else {
     if (s.signer.batch_nonce != batch_nonce) {
       return {
-        error: `Invalid batch_nonce ${s.signer.batch_nonce} vs ${batch_nonce}`
+        error: `Invalid batch_nonce ${s.signer.batch_nonce} vs ${batch_nonce}`,
       }
     }
   }
@@ -136,7 +134,7 @@ module.exports = async (s, batch) => {
     me.addEvent({
       type: 'onchainfee',
       desc: `Our tx was included and fee taken`,
-      amount: txfee
+      amount: txfee,
     })
   }
 
@@ -152,7 +150,7 @@ module.exports = async (s, batch) => {
     length: batch.length,
 
     // valid and executed events
-    events: []
+    events: [],
   }
 
   // transaction consists of short id and array of args

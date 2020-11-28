@@ -37,7 +37,7 @@ if (opener) {
   opener.postMessage({status: 'loaded'}, '*')
 }
 
-String.prototype.hexEncode = function() {
+String.prototype.hexEncode = function () {
   var hex, i
 
   var result = ''
@@ -67,40 +67,40 @@ window.renderRisk = (hist) => {
             steppedLine: true,
             data: [{x: Math.round(new Date() / precision), y: 0}],
             borderColor: 'rgb(220, 53, 69)',
-            backgroundColor: 'rgb(220, 53, 69)'
-          }
-        ]
+            backgroundColor: 'rgb(220, 53, 69)',
+          },
+        ],
       },
       options: {
         legend: {
-          display: false
+          display: false,
         },
 
         maintainAspectRatio: false,
         // responsive: false,
 
         title: {
-          display: true
+          display: true,
         },
         scales: {
           xAxes: [
             {
               type: 'linear',
               position: 'bottom',
-              labelString: 'Time'
-            }
+              labelString: 'Time',
+            },
           ],
           yAxes: [
             {
               ticks: {
                 suggestedMin: 0,
                 suggestedMax: 1000,
-                mirror: true
-              }
-            }
-          ]
-        }
-      }
+                mirror: true,
+              },
+            },
+          ],
+        },
+      },
     })
   }
 
@@ -109,23 +109,20 @@ window.renderRisk = (hist) => {
   var last = d.pop()
 
   if (hist.length == 0) return false
-  var hist = hist
-    .slice()
-    .reverse()
-    .slice(d.length)
+  var hist = hist.slice().reverse().slice(d.length)
 
   for (h of hist) {
     d.push({
       x: Math.round(Date.parse(h.date) / precision),
       // for now we hide the spent dynamics to not confuse the user
-      y: Math.round(h.delta / 100)
+      y: Math.round(h.delta / 100),
     })
   }
 
   // keep it updated
   d.push({
     x: Math.round(new Date() / precision),
-    y: d[d.length - 1].y
+    y: d[d.length - 1].y,
   })
 
   window.riskchart.update()
@@ -193,13 +190,21 @@ window.render = (r) => {
     app.updateRoutes()
   }
 
+  if (r.channels && r.channels.length > 0) {
+    // find max visual capacity per asset
+    for (let i = 0; i < r.assets.length; i++) {
+      let assetId = r.assets[i].id
+      let caps = r.channels.map((ch) => ch.derived[assetId].capacity)
+      app.max_visual_capacity[assetId] = Math.round(Math.max(...caps) * 1.1)
+    }
+  }
+
   Object.assign(window.app, r)
   window.app.$forceUpdate()
 
   if (firstLoad && location.hostname.startsWith('demo-') && prefillUsername) {
     prefillUsername()
   }
-
   // go add banks if logged in & no channels exist
   if (
     firstLoad &&
@@ -219,7 +224,7 @@ function WebSocketClient() {
   this.number = 0 // Message number
   this.autoReconnectInterval = 5 * 1000 // ms
 }
-WebSocketClient.prototype.open = function(url) {
+WebSocketClient.prototype.open = function (url) {
   this.url = url
   this.instance = new WebSocket(this.url)
 
@@ -253,7 +258,7 @@ WebSocketClient.prototype.open = function(url) {
     }
   })
 }
-WebSocketClient.prototype.send = function(data) {
+WebSocketClient.prototype.send = function (data) {
   if (this.instance && this.instance.readyState != 1) {
     //l("Socket is not ready")
     return false
@@ -271,7 +276,7 @@ WebSocketClient.prototype.send = function(data) {
   }
 }
 
-WebSocketClient.prototype.reconnect = function(e) {
+WebSocketClient.prototype.reconnect = function (e) {
   // console.log(`WebSocketClient: retry in ${this.autoReconnectInterval}ms`);
   //this.instance.removeAllListeners()
   app.online = false
@@ -280,20 +285,20 @@ WebSocketClient.prototype.reconnect = function(e) {
   window.close()
 
   var that = this
-  setTimeout(function() {
+  setTimeout(function () {
     that.open(that.url)
   }, this.autoReconnectInterval)
 }
-WebSocketClient.prototype.onopen = function(e) {
+WebSocketClient.prototype.onopen = function (e) {
   console.log('WebSocketClient: open', arguments)
 }
-WebSocketClient.prototype.onmessage = function(data, flags, number) {
+WebSocketClient.prototype.onmessage = function (data, flags, number) {
   // console.log("WebSocketClient: message",arguments);
 }
-WebSocketClient.prototype.onerror = function(e) {
+WebSocketClient.prototype.onerror = function (e) {
   console.log('WS error  ', e)
 }
-WebSocketClient.prototype.onclose = function(e) {
+WebSocketClient.prototype.onclose = function (e) {
   // console.log('WebSocketClient: closed', arguments)
 }
 
@@ -305,7 +310,7 @@ window.FS = (method, params = {}) => {
         params: params,
         id: 1,
         auth_code: localStorage.auth_code,
-        is_wallet: true // not all internal_rpc clients are wallets
+        is_wallet: true, // not all internal_rpc clients are wallets
       })
     )
   })
@@ -327,6 +332,6 @@ FS.ws.onopen = () => {
   // App is available as `window.app`
   new Vue({
     el: '#app',
-    render: (h) => h(App)
+    render: (h) => h(App),
   })
 }

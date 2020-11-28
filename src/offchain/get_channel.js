@@ -16,7 +16,7 @@ module.exports = async (pubkey) => {
     //l('Loading channel : ', pubkey)
 
     if (me.pubkey.equals(pubkey)) {
-      l('Channel to self?')
+      //l('Channel to self?')
       return false
     }
 
@@ -27,9 +27,9 @@ module.exports = async (pubkey) => {
 
     ch.d = await Channel.findOne({
       where: {
-        they_pubkey: pubkey
+        they_pubkey: pubkey,
       },
-      include: [Subchannel]
+      include: [Subchannel],
     })
 
     if (!ch.d) {
@@ -41,12 +41,12 @@ module.exports = async (pubkey) => {
           status: 'merge', // wait for initial ack
           subchannels: [
             {
-              asset: 1
+              asset: 1,
             },
             {
-              asset: 2
-            }
-          ]
+              asset: 2,
+            },
+          ],
         },
         {include: [Subchannel]}
       )
@@ -68,11 +68,11 @@ module.exports = async (pubkey) => {
       where: {
         channelId: ch.d.id,
         // delack is archive
-        [Op.or]: [{type: {[Op.ne]: 'del'}}, {status: {[Op.ne]: 'ack'}}]
+        [Op.or]: [{type: {[Op.ne]: 'del'}}, {status: {[Op.ne]: 'ack'}}],
       },
       limit: 3000,
       // explicit order because of postgres https://gitbank.com/sequelize/sequelize/issues/9289
-      order: [['id', 'ASC']]
+      order: [['id', 'ASC']],
     })
 
     refresh(ch)

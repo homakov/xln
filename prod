@@ -9,15 +9,15 @@ set -o pipefail
 pm2 delete all || true
 killall Fairlayer 2>/dev/null || true
 
-db=--db=mysql:root:123123
+db=
+#db=--db=mysql:root:123123
 #db=--db=postgres:postgres:123123
+
 pm2_opts=--no-autorestart
 maxport=8008
 fair_cluster_args="--wallet-dist $db --prod-server --color --silent --monkey=$maxport"
 
-if [[ `node -v` =~ v10 ]]; then
-  nodeflags=--experimental-repl-await
-fi
+nodeflags=--experimental-repl-await
 
 # Rotate logs for clarity
 if [ -f /etc/logrotate.d/pm2-root ]; then
@@ -35,25 +35,40 @@ npm run build
 
 node fair.js --genesis=test $db --prod-server
 fair_node_args="-p8000 --db-pool=50 --rebalance"
-pm2 start $pm2_opts --name fair8000 fair.js -- $fair_cluster_args $fair_node_args
+pm2 start $pm2_opts --name f8000 fair.js -- $fair_cluster_args $fair_node_args
 
 for i in $(seq 8001 $maxport); do
   rsync -q -rva --exclude=offchain data/* data$i
   fair_node_args="-p$i --username=$i --pw=password --datadir=data$i"
   if (( i < 8004 )); then
-    pm2 start $pm2_opts --name fair$i fair.js -- $fair_cluster_args $fair_node_args
+    pm2 start $pm2_opts --name f$i fair.js -- $fair_cluster_args $fair_node_args
   else
-    pm2 start $pm2_opts --name fair$i fair.js -- $fair_cluster_args $fair_node_args
+    pm2 start $pm2_opts --name f$i fair.js -- $fair_cluster_args $fair_node_args
   fi
 done
 
+cat data/offchain/pk.json   | echo "ROOT: http://fairlayer.com:8000/#auth_code=$(jq .auth_code -r)"
+
+maxport=8008
+for i in $(seq 8001 $maxport); do
+ echo $i;
+ cat data$i/offchain/pk.json | echo "http://fairlayer.com:$i/#auth_code=$(jq .auth_code -r)"
+ cat data$i/offchain/pk.json | echo "$(jq .pubkey -r)"
+done
 
 rm ~/Caddyfile
 cp ./tools/Caddyfile ~/Caddyfile
-caddy -service restart
+cd ~
+caddy stop
+caddy start
+
+
+
 
 # init Web wallet at :3010
-cd ~/web
-pm2 start app.js
+
+#cd ~/web
+#pm2 start app.js
+
 #node --prof fair.js -p443 --silent --wallet-dist --db=$db
 

@@ -20,7 +20,7 @@ module.exports = {
       'ins_balance',
       'offdelta',
       'credit',
-      'they_credit'
+      'they_credit',
     ]) {
       if (Number.isInteger(parseInt(democh[arg]))) {
         democh[arg] = parseInt(democh[arg])
@@ -40,7 +40,7 @@ module.exports = {
       they_insured:
         delta > insurance ? 0 : delta > 0 ? insurance - delta : insurance,
       // right user promises when delta > insurance, scenario 1
-      uninsured: delta > insurance ? delta - insurance : 0
+      uninsured: delta > insurance ? delta - insurance : 0,
     }
 
     var total =
@@ -96,7 +96,7 @@ module.exports = {
     app.call('getRoutes', {
       address: app.outward.address,
       amount: app.outward.amount,
-      asset: app.outward.asset
+      asset: app.outward.asset,
     })
   },
 
@@ -135,7 +135,7 @@ module.exports = {
 
   toHexString: (byteArray) => {
     return Array.prototype.map
-      .call(byteArray, function(byte) {
+      .call(byteArray, function (byte) {
         return ('0' + (byte & 0xff).toString(16)).slice(-2)
       })
       .join('')
@@ -144,9 +144,7 @@ module.exports = {
   requestInsurance: (ch, asset) => {
     if (!app.record && asset != 1) {
       alert(
-        `You can't have insurance in non-FRD assets now, ${
-          app.onchain
-        } registration is required. Request insurance in FRD asset first.`
+        `You can't have insurance in non-FRD assets now, ${app.onchain} registration is required. Request insurance in FRD asset first.`
       )
       return
     }
@@ -165,12 +163,12 @@ module.exports = {
       app.call('withChannel', {
         method: 'requestInsurance',
         they_pubkey: ch.d.they_pubkey,
-        asset: asset
+        asset: asset,
       })
     }
   },
 
-  call: function(method, args = {}) {
+  call: function (method, args = {}) {
     if (method == 'vote') {
       args.rationale = prompt('Why?')
       if (!args.rationale) return false
@@ -186,7 +184,7 @@ module.exports = {
       asset: d.asset,
       amount: app.uncommy(d.amount),
       bank: d.bank,
-      address: d.address
+      address: d.address,
     })
     //app.resetOutward()
   },
@@ -198,7 +196,7 @@ module.exports = {
       amount: '',
       asset: 1,
       type: app.outward.type,
-      bank: -1
+      bank: -1,
     }
   },
 
@@ -229,6 +227,7 @@ module.exports = {
   },
 
   toUser: (userId) => {
+    if (!userId) return userId
     // returns either bank name or just id
     // todo: twitter-style tooltips with info on the user
     if (userId.length > 20) return app.trim(userId)
@@ -260,7 +259,7 @@ module.exports = {
       }),
       links: app.K.routes.map((r) => {
         return {source: r[0], target: r[1], value: 1}
-      })
+      }),
     })
   },
 
@@ -300,12 +299,11 @@ module.exports = {
     // shortcuts, to show if entire balance is [un]insured
     if (obj.available == 0) return ''
 
-    if (obj.insured == obj.available) return ` (insured)`
+    if (obj.insured == obj.available) return ` (all insured)`
 
-    if (obj.uninsured == obj.available) return ` (uninsured)`
+    if (obj.uninsured == obj.available) return ` (all uninsured)`
 
-    if (obj.available_credit > 0)
-      str.push('available credit ' + c(obj.available_credit))
+    if (obj.available_credit > 0) str.push('credit ' + c(obj.available_credit))
     if (obj.insured > 0) str.push('insured ' + c(obj.insured))
     if (obj.uninsured > 0) str.push('uninsured ' + c(obj.uninsured))
 
@@ -345,11 +343,17 @@ module.exports = {
         o += `<tr><td>${app.toTicker(parts.asset)}</td>`
 
         // first two may contain debts
-        let toDebt = (d)=>{return d ? ' <b>(debt)</b>' : ''}
+        let toDebt = (d) => {
+          return d ? ' <b>(debt)</b>' : ''
+        }
         if (parts.uninsured > 0) {
-          o += `<td>${c(parts.insured)} + ${c(parts.uninsured)}${toDebt(parts.debt)}</td><td>0</td></tr>`
+          o += `<td>${c(parts.insured)} + ${c(parts.uninsured)}${toDebt(
+            parts.debt
+          )}</td><td>0</td></tr>`
         } else if (parts.they_uninsured > 0) {
-          o += `<td>0</td><td>${c(parts.they_insured)} + ${c(parts.they_uninsured)}${toDebt(parts.they_debt)}</td></tr>`
+          o += `<td>0</td><td>${c(parts.they_insured)} + ${c(
+            parts.they_uninsured
+          )}${toDebt(parts.they_debt)}</td></tr>`
         } else {
           o += `<td>${parts.insured > 0 ? c(parts.insured) : '0'}</td><td>${
             parts.they_insured > 0 ? c(parts.they_insured) : '0'
@@ -379,38 +383,38 @@ module.exports = {
       {
         name: 'second',
         limit: 60,
-        in_seconds: 1
+        in_seconds: 1,
       },
       {
         name: 'minute',
         limit: 3600,
-        in_seconds: 60
+        in_seconds: 60,
       },
       {
         name: 'hour',
         limit: 86400,
-        in_seconds: 3600
+        in_seconds: 3600,
       },
       {
         name: 'day',
         limit: 604800,
-        in_seconds: 86400
+        in_seconds: 86400,
       },
       {
         name: 'week',
         limit: 2629743,
-        in_seconds: 604800
+        in_seconds: 604800,
       },
       {
         name: 'month',
         limit: 31556926,
-        in_seconds: 2629743
+        in_seconds: 2629743,
       },
       {
         name: 'year',
         limit: null,
-        in_seconds: 31556926
-      }
+        in_seconds: 31556926,
+      },
     ]
     var diff = (new Date() - new Date(time)) / 1000
     if (diff < 5) return 'now'
@@ -442,7 +446,6 @@ module.exports = {
   prettyBatch: (batch) => {
     let r = ''
     for (let tx of batch) {
-
       if (['withdraw', 'deposit'].includes(tx[0])) {
         let capital = tx[0][0].toUpperCase() + tx[0].slice(1)
         r += `<span class="badge badge-dark">${capital} ${app.toTicker(
@@ -490,5 +493,5 @@ module.exports = {
     }
     // new and sent are considered "pending" statuses
     return s + (['ack', 'processed'].includes(t.status) ? '' : '🕟')
-  }
+  },
 }

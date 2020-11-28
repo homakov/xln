@@ -58,9 +58,20 @@
             <a class="nav-link" @click="go('node_metrics')">{{t('node_metrics')}}</a>
           </li>
         </template>
+
         <li class="nav-item">
           <a class="nav-link" @click="go('blockchain_history')">{{t('blockchain_history')}}</a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" @click="go('channel_explorer')">Channels</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" @click="go('account_explorer')">Accounts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" @click="go('assets')">Assets</a>
+        </li>
+
         <li class="nav-item">
           <a class="nav-link" @click="go('validators')">{{t('validators')}}</a>
         </li>
@@ -143,6 +154,10 @@
           <h4 class="alert alert-primary" v-if="my_bank">This node is a bank: {{my_bank.handle}}</h4>
           <h4 class="alert alert-primary" v-if="my_validator">This node is a validator: {{my_validator.username}}</h4>
           <p style="word-wrap: break-word">Your address: <b>{{address}}</b></p>
+
+          <p><a class="dotted" @click="go('banks')">Add or remove bank accounts</a> 
+           | <a  class="dotted" @click="go('bank_manager')">Create a bank</a></p>
+
           <template v-if="outward.type == 'offchain'">
             <div class="alert alert-secondary" v-for="ch in channels">
               <h1>
@@ -150,7 +165,13 @@
               </h1>
               <p>
                 <template v-for="subch in ch.d.subchannels">
+                  <visual-channel :derived="ch.derived[subch.asset]" :max_visual_capacity="max_visual_capacity[subch.asset]"></visual-channel>
+
+                  <h5><a class="dotted" style="float:right" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">Inbound Capacity: {{commy(ch.derived[subch.asset].they_available)}}</a></h5>
+
+
                   <h5><a class="dotted" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{toTicker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}}{{elaborateAvailable(ch.derived[subch.asset])}}</a></h5>
+
 
                 <p>
 
@@ -238,7 +259,7 @@
                 <h5>Choose route/fee:</h5>
                 <div class="radio" v-for="(r, index) in bestRoutes.slice(0, bestRoutesLimit)">
                   <label>
-                    <input type="radio" :value="r[1].join('_')" v-model="chosenRoute"> {{routeToText(r)}} (<b>{{r[0]}}</b>) </label>
+                    <input type="radio" :value="r[1].join('_')" v-model="chosenRoute"> {{routeToText(r)}} (<b>{{r[0].toFixed(3)}}</b>) </label>
                 </div>
                 <p v-if="bestRoutes.length > bestRoutesLimit"><a class="dotted" @click="bestRoutesLimit += 5">Show More Routes</a></p>
               </template>
@@ -316,13 +337,181 @@
           <button class="btn btn-lg btn-outline-primary btn-block step-login" id="login" type="submit">Generate Wallet</button>
         </form>
       </div>
+
+      <div v-else-if="tab=='account_explorer'">
+        <h1>Account Explorer</h1>
+        <p>This is a table of registered users in the network. {{onchain}} balance is normally used to pay transaction fees, and most assets are stored with banks under Insurance explorer.</p>
+        <table class="table table-striped">
+          <thead class="thead-dark">
+            <tr>
+              <th scope="col">Icon</th>
+              <th scope="col">ID</th>
+
+              <th scope="col">Pubkey</th>
+              <th scope="col">Assets</th>
+              <th scope="col">Batch Nonce</th>
+              <th scope="col">Debts</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="u in users">
+              <th>
+                <UserIcon :hash="u.pubkey" :size="30"></UserIcon>
+              </th>
+              <th scope="row">{{to_user(u.id)}}</th>
+
+              <td><small>{{u.pubkey.substr(0,10)}}..</small></td>
+              <td><span v-for="b in u.balances">{{to_ticker(b.asset)}}: {{commy(b.balance)}}&nbsp;</span></td>
+              <td>{{u.batch_nonce}}</td>
+              <td>{{u.debts.length}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else-if="tab=='channel_explorer'">
+        <h1>Insurance Explorer</h1>
+        <p>Insurances represent collateral between two parties.</p>
+        <table class="table table-striped">
+          <thead class="thead-dark">
+            <tr>
+              <th width="10%" scope="col">Left ID</th>
+              <th width="10%" scope="col">Right ID</th>
+              <th width="60%" scope="col">Insurances</th>
+              <th scope="col">Withdrawal Nonce</th>
+              <th scope="col">Dispute</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="ins in insurances">
+              <th v-html="to_user(ins.leftId)"></th>
+              <th v-html="to_user(ins.rightId)"></th>
+              <th><span v-for="subins in ins.subinsurances">{{to_ticker(subins.asset)}}: {{commy(subins.balance)}}</span></th>
+              <th>{{ins.withdrawal_nonce}}</th>
+              <th>{{ins.dispute_delayed ? "Until "+ins.dispute_delayed+" started by "+(ins.dispute_left ? 'Left' : 'Right') : "No" }}</th>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else-if="tab=='assets'">
+        <h1>Assets</h1>
+        <p>Fair assets is the name for all kinds of fiat/crypto-currencies, tokens and stock you can create on top of the system.</p>
+        <table class="table table-striped">
+          <thead class="thead-dark">
+            <tr>
+              <th scope="col">Ticker</th>
+              <th scope="col">Name</th>
+              <th scope="col">Description</th>
+              <th scope="col">Total Supply</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="u in assets">
+              <th>{{u.ticker}}</th>
+              <th>{{u.name}}</th>
+              <th>{{u.desc}}</th>
+              <th>{{commy(u.total_supply)}}</th>
+              <th v-if="PK">
+                <button v-if="PK.usedAssets.includes(u.id)" class="btn btn-outline-danger" @click="call('toggleAsset', {id: u.id})">Remove</button>
+                <button v-else class="btn btn-outline-success" @click="call('toggleAsset', {id: u.id})">Add</button>
+              </th>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+
+
+
+
+
+
+      <div v-else-if="tab=='banks'">
+        <p>Banks inside Fairlayer are provably-solvent by design. Your device always stores a cryptographic dispute proof in case you need to get your assets back. Choose your banks based on people and businesses you transact with, your location and their track record. If a bank is compromised you may lose your uninsured balance, so don't forget to request insurance.</p>
+        <template v-for="u in K.banks">
+          <h1>{{u.handle}}</h1>
+          <!--<img v-bind:src="'/img/icons/' + u.id +'.jpg'">-->
+          <small>Created at {{new Date(u.createdAt).toDateString()}}</small>
+          <p>Fees: {{bpsToPercent(u.fee_bps)}}</p>
+          <small><a :href="u.website">{{u.website}}</a></small>
+          <p v-if="PK">
+            <button v-if="PK.usedBanks.includes(u.id)" class="btn btn-outline-danger" @click="call('toggleBank', {id: u.id})">Close Account</button>
+            <button v-else-if="my_bank && my_bank.id==u.id" class="btn btn-outline-success">It's you</button>
+            <button v-else class="btn btn-outline-success" @click="call('toggleBank', {id: u.id})">Open an Account</button>
+          </p>
+        </template>
+      </div>
+      <div v-else-if="tab=='asset_manager'">
+        <div class="form-group">
+          <h2>Create an Asset</h2>
+          <p>
+            <label for="comment">Name:</label>
+            <input class="form-control" v-model="new_asset.name" rows="2" id="comment"></input>
+          </p>
+          <p>
+            <label for="comment">Ticker (must be unique):</label>
+            <input class="form-control" v-model="new_asset.ticker" rows="2" id="comment"></input>
+          </p>
+          <p>
+            <label for="comment">Amount:</label>
+            <input class="form-control" v-model="new_asset.amount" rows="2" id="comment"></input>
+          </p>
+          <p>
+            <label for="comment">Division point (e.g. 0 for yen, 2 for dollar):</label>
+            <input class="form-control" v-model="new_asset.division" rows="2" id="comment"></input>
+          </p>
+          <p>
+            <label for="comment">Description:</label>
+            <input class="form-control" v-model="new_asset.desc" rows="2" id="comment"></input>
+          </p>
+          <p v-if="record">
+            <button class="btn btn-outline-success" @click="call('createAsset', new_asset)">Create Asset 🌐</button>
+          </p>
+          <p v-else>In order to create your own asset you must have a registered account with FRD balance.</p>
+          <div class="alert alert-primary">After creation the entire supply will appear on your {{onchain}} balance, then you can deposit it to a bank and start sending instantly to other users.</div>
+        </div>
+      </div>
+      <div v-else-if="tab=='bank_manager'">
+        <div class="form-group">
+          <h2>Create a Bank</h2>
+          <p>
+            <label for="comment">Handle:</label>
+            <input class="form-control" v-model="new_bank.handle" rows="2" placeholder="newbank"></input>
+          </p>
+          <p>
+            <label for="comment">Fee (in basis points, 10 is 0.10%):</label>
+            <input class="form-control" v-model="new_bank.fee_bps" rows="2" id="comment"></input>
+          </p>
+          <p>
+            <label for="comment">Fairlayer-compatible RPC:</label>
+            <input class="form-control" v-model="new_bank.location" rows="2"></input>
+          </p>
+          <p>
+            <label for="comment">Routes to add (their bank id, route agreement in hex):</label>
+            <input class="form-control" v-model="new_bank.add_routes" rows="2"></input>
+          </p>
+          <p>
+            <label for="comment">Routes to remove (comma separated ids):</label>
+            <input class="form-control" v-model="new_bank.remove_routes" rows="2"></input>
+          </p>
+          <p v-if="record && !my_bank">
+            <button class="btn btn-outline-success" @click="call('createBank', new_bank)">Create Bank 🌐</button>
+          </p>
+          <p v-else-if="my_bank"><b>You are already a bank.</b></p>
+          <p v-else>In order to create your own asset you must have a registered account with FRD balance.</p>
+          <div class="alert alert-primary">After execution this account will be marked as a bank. Do not use this account for any other purposes.</div>
+        </div>
+        <svg width="800" height="600" id="bankgraph"></svg>
+      </div>
+
+
       <div v-else-if="tab=='install'">
         <h4>Instant Full Node Demo</h4>
         <p><a href="/demoinstance">Try Fair Core for 1 hour without installing it on your computer.</a> Currently active sessions: {{busyPorts}}</p>
         <h4>Install a Full Node</h4>
         <p>Install <a href="https://nodejs.org/en/download/">Node.js</a> (9.6.0+) and copy paste this snippet into your Terminal app and press Enter:</p>
         <div style="background-color: #FFFDDE; padding-left: 10px;">
-          <Highlight :white="true" lang="bash" :code="install_snippet"></Highlight>
+          <pre :white="true" lang="bash" >{{install_snippet}}</pre>
         </div>
         <p><b>For higher security</b> visit a few trusted nodes below and verify the snippet to ensure our server isn't compromised. Only paste the snippet into Terminal if there is exact match with other sources.</p>
         <ul>
@@ -349,10 +538,10 @@
         <div v-for="p in proposals">
           <h4>#{{p.id}}: {{p.desc}}</h4>
           <small>Proposed by {{toUser(p.user.id)}}</small>
-          <Highlight lang="javascript" :code="p.code"></Highlight>
+          <pre lang="javascript" :code="p.code">{{p.code}}</pre>
           <div v-if="p.patch">
             <div style="line-height:15px; font-size:12px;">
-              <Highlight lang="diff" :code="p.patch"></Highlight>
+              <pre lang="diff" :code="p.patch">{{p.patch}}</pre>
             </div>
           </div>
           <p v-for="u in p.voters">
@@ -435,6 +624,7 @@
         <div class="modal-content">
           <div class="modal-body">
             <div class="container-fluid">
+              
               <div class="row">
                 <div class="col-md-6">
                   <table class="table">
@@ -448,28 +638,28 @@
                     <tbody>
                       <tr>
                         <td>Available {{toTicker(mod.subch.asset)}}</td>
-                        <td>{{commy(derived.available)}}</td>
-                        <td>{{commy(derived.they_available)}}</td>
+                        <td>{{commy(current_derived.available)}}</td>
+                        <td>{{commy(current_derived.they_available)}}</td>
                       </tr>
                       <tr>
                         <td>Hold</td>
-                        <td>{{commy(derived.outwards_hold)}}</td>
-                        <td>{{commy(derived.inwards_hold)}}</td>
+                        <td>{{commy(current_derived.outwards_hold)}}</td>
+                        <td>{{commy(current_derived.inwards_hold)}}</td>
                       </tr>
                       <tr>
                         <td>Insured</td>
-                        <td>{{commy(derived.insured)}}</td>
-                        <td>{{commy(derived.they_insured)}}</td>
+                        <td>{{commy(current_derived.insured)}}</td>
+                        <td>{{commy(current_derived.they_insured)}}</td>
                       </tr>
                       <tr>
                         <td>Uninsured</td>
-                        <td>{{commy(derived.uninsured)}}</td>
-                        <td>{{commy(derived.they_uninsured)}}</td>
+                        <td>{{commy(current_derived.uninsured)}}</td>
+                        <td>{{commy(current_derived.they_uninsured)}}</td>
                       </tr>
                       <tr>
                         <td>Credit</td>
-                        <td>{{commy(mod.subch.credit)}}</td>
-                        <td>{{commy(mod.subch.they_credit)}}</td>
+                        <td>{{commy(current_derived.credit)}}</td>
+                        <td>{{commy(current_derived.they_credit)}}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -488,6 +678,12 @@
                   </p>
 
                 </div>
+
+                <visual-channel :derived="current_derived" :max_visual_capacity="max_visual_capacity[mod.subch.asset]"></visual-channel>
+
+
+
+
               </div>
             </div>
           </div>
@@ -538,19 +734,21 @@ const plugin = {
 Vue.use(plugin)
 
 
-import Highlight from './Highlight'
+//import Highlight from './Highlight'
 import Home from './Home'
 import Tutorial from './Tutorial'
 import Event from './Event'
 
 import Dotsloader from './Dotsloader'
-//import VisualChannel from './VisualChannel'
+
+import VisualChannel from './VisualChannel'
 
 
 
 export default {
   components: {
-    Highlight,
+    //Highlight,
+    'visual-channel': VisualChannel,
     Home,
     Tutorial,
     Event,
@@ -585,7 +783,7 @@ export default {
     return require('./data')
   },
   computed: {
-    derived: function() {
+    current_derived: function() {
       let ch = this.channels.find(ch => ch.d.id == this.mod.ch.d.id)
 
       return ch.derived[this.mod.subch.asset]

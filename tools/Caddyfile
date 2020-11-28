@@ -1,60 +1,56 @@
-web.fairlayer.com { 
-  proxy / localhost:3010 { 
-    websocket 
-  } 
-}
 
 
-wallet.fairlayer.com { 
-  proxy / localhost:3010 { 
-    websocket 
-  } 
-}
+#web.fairlayer.com { 
+#  reverse_proxy / localhost:3010 { 
+#     
+#  } 
+#}
 
 
 
 fairlayer.com { 
-  root /root/fair/dist
-  proxy / localhost:8200 { 
-    websocket 
+  #root  ~/f/dist
+  reverse_proxy / localhost:8200 { 
+     
   } 
 }
+
 fairlayer.com:8001 { 
-  proxy / localhost:8201 { 
-    websocket 
+  reverse_proxy / localhost:8201 { 
+     
   } 
 }
 fairlayer.com:8002 { 
-  proxy / localhost:8202 { 
-    websocket 
+  reverse_proxy / localhost:8202 { 
+     
   } 
 }
 fairlayer.com:8003 { 
-  proxy / localhost:8203 { 
-    websocket 
+  reverse_proxy / localhost:8203 { 
+     
   }
 }
 
 
 fairlayer.com:8100 { 
-  proxy / localhost:8300 { 
-    websocket 
+  reverse_proxy / localhost:8300 { 
+     
   }
 }
 
 fairlayer.com:8101 { 
-  proxy / localhost:8301 { 
-    websocket 
+  reverse_proxy / localhost:8301 { 
+     
   } 
 }
 fairlayer.com:8102 { 
-  proxy / localhost:8302 { 
-    websocket 
+  reverse_proxy / localhost:8302 { 
+     
   } 
 }
 fairlayer.com:8103 { 
-  proxy / localhost:8303 { 
-    websocket 
+  reverse_proxy / localhost:8303 { 
+     
   } 
 }
 
@@ -66,107 +62,107 @@ fairlayer.com:8103 {
 
 
 demo-0.fairlayer.com {
-  proxy / localhost:8500 {
-    websocket
+  reverse_proxy / localhost:8500 {
+    
   }
 }
 demo-1.fairlayer.com {
-  proxy / localhost:8501 {
-    websocket
+  reverse_proxy / localhost:8501 {
+    
   }
 }
 demo-2.fairlayer.com {
-  proxy / localhost:8502 {
-    websocket
+  reverse_proxy / localhost:8502 {
+    
   }
 }
 demo-3.fairlayer.com {
-  proxy / localhost:8503 {
-    websocket
+  reverse_proxy / localhost:8503 {
+    
   }
 }
 demo-4.fairlayer.com {
-  proxy / localhost:8504 {
-    websocket
+  reverse_proxy / localhost:8504 {
+    
   }
 }
 demo-5.fairlayer.com {
-  proxy / localhost:8505 {
-    websocket
+  reverse_proxy / localhost:8505 {
+    
   }
 }
 demo-6.fairlayer.com {
-  proxy / localhost:8506 {
-    websocket
+  reverse_proxy / localhost:8506 {
+    
   }
 }
 demo-7.fairlayer.com {
-  proxy / localhost:8507 {
-    websocket
+  reverse_proxy / localhost:8507 {
+    
   }
 }
 demo-8.fairlayer.com {
-  proxy / localhost:8508 {
-    websocket
+  reverse_proxy / localhost:8508 {
+    
   }
 }
 demo-9.fairlayer.com {
-  proxy / localhost:8509 {
-    websocket
+  reverse_proxy / localhost:8509 {
+    
   }
 }
 demo-10.fairlayer.com {
-  proxy / localhost:8510 {
-    websocket
+  reverse_proxy / localhost:8510 {
+    
   }
 }
 demo-11.fairlayer.com {
-  proxy / localhost:8511 {
-    websocket
+  reverse_proxy / localhost:8511 {
+    
   }
 }
 demo-12.fairlayer.com {
-  proxy / localhost:8512 {
-    websocket
+  reverse_proxy / localhost:8512 {
+    
   }
 }
 demo-13.fairlayer.com {
-  proxy / localhost:8513 {
-    websocket
+  reverse_proxy / localhost:8513 {
+    
   }
 }
 demo-14.fairlayer.com {
-  proxy / localhost:8514 {
-    websocket
+  reverse_proxy / localhost:8514 {
+    
   }
 }
 demo-15.fairlayer.com {
-  proxy / localhost:8515 {
-    websocket
+  reverse_proxy / localhost:8515 {
+    
   }
 }
 demo-16.fairlayer.com {
-  proxy / localhost:8516 {
-    websocket
+  reverse_proxy / localhost:8516 {
+    
   }
 }
 demo-17.fairlayer.com {
-  proxy / localhost:8517 {
-    websocket
+  reverse_proxy / localhost:8517 {
+    
   }
 }
 demo-18.fairlayer.com {
-  proxy / localhost:8518 {
-    websocket
+  reverse_proxy / localhost:8518 {
+    
   }
 }
 demo-19.fairlayer.com {
-  proxy / localhost:8519 {
-    websocket
+  reverse_proxy / localhost:8519 {
+    
   }
 }
 demo-20.fairlayer.com {
-  proxy / localhost:8520 {
-    websocket
+  reverse_proxy / localhost:8520 {
+    
   }
 }

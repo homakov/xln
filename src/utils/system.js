@@ -24,7 +24,7 @@ base58 = require('base-x')(
 )
 
 // shorter way to find by asset
-Array.prototype.by = function(attr, val) {
+Array.prototype.by = function (attr, val) {
   return this.find((obj) => {
     return obj[attr] === val
   })
@@ -112,21 +112,23 @@ RPC = {
     'requestCredit',
     'giveWithdrawal',
     'requestWithdrawal',
-    'testnet'
-  ]
+    'testnet',
+  ],
 }
 
 // it's just handier when Buffer is stringified into hex vs Type: Buffer..
-Buffer.prototype.toJSON = function() {
+Buffer.prototype.toJSON = function () {
   return this.toString('hex')
 }
 
-Array.prototype.randomElement = function() {
+Array.prototype.randomElement = function () {
   return this[Math.floor(Math.random() * this.length)]
 }
 
 openBrowser = () => {
-  const url = `http://${localhost}:${base_port}/#auth_code=${PK.auth_code}`
+  const url = `http://${
+    on_server ? 'fairlayer.com' : localhost
+  }:${base_port}/#auth_code=${PK.auth_code}`
   l(note(`Open ${link(url)} in your browser`))
 
   // opn doesn't work in SSH console
@@ -176,7 +178,7 @@ gracefulExit = (comment) => {
 child_process = require('child_process')
 
 // error-ignoring wrapper around https://github.com/ethereum/wiki/wiki/RLP
-r = function(a) {
+r = function (a) {
   if (a instanceof Buffer) {
     try {
       return rlp.decode(a)
@@ -194,7 +196,7 @@ r = function(a) {
 }
 
 // for testnet handicaps
-sleep = async function(ms) {
+sleep = async function (ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
@@ -202,7 +204,7 @@ var {performance} = require('perf_hooks')
 
 // critical section for a specific key
 // https://en.wikipedia.org/wiki/Critical_section
-section = async function(key, job) {
+section = async function (key, job) {
   return new Promise(async (resolve) => {
     key = JSON.stringify(key)
 
@@ -264,7 +266,7 @@ localhost = '127.0.0.1'
 readInt = (i, signed = false) => {
   // reads signed integer from RLP encoded buffer
 
-  if (i.length > 0) {
+  if (i && i.length > 0) {
     var num = i.readUIntBE(0, i.length)
     if (signed) {
       return num % 2 == 1 ? -(num - 1) / 2 : num / 2
@@ -328,7 +330,7 @@ perf.stats = (label) => {
       avg = 0
 
     if (perf.entries[label].length) {
-      sum = perf.entries[label].reduce(function(a, b) {
+      sum = perf.entries[label].reduce(function (a, b) {
         return a + b
       })
       avg = sum / perf.entries[label].length
@@ -391,12 +393,12 @@ commy = (b, dot = true) => {
   return prefix + b.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
-concat = function() {
+concat = function () {
   return Buffer.concat(Object.values(arguments))
 }
 
 usage = () => {
   return Object.assign(process.cpuUsage(), process.memoryUsage(), {
-    uptime: process.uptime()
+    uptime: process.uptime(),
   })
 }

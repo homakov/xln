@@ -1,1 +1,1 @@
-pm2 logs --lines=500 $1
+pm2 logs --lines=5000 $1

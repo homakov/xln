@@ -29,7 +29,7 @@ module.exports = async (json) => {
 
     if (subch.withdrawal_amount == 0) {
       react({
-        alert: 'Failed to get withdrawal. Try later or start a dispute.'
+        alert: 'Failed to get withdrawal. Try later or start a dispute.',
       })
       return
     }
@@ -46,7 +46,7 @@ module.exports = async (json) => {
     // not used
     me.batchAdd('deposit', [
       json.asset,
-      [json.amount, me.record.id, ch.partner, 0]
+      [json.amount, me.record.id, ch.partner, 0],
     ])
     react({confirm: 'OK'})
   } else if (json.method == 'setLimits') {
@@ -63,17 +63,17 @@ module.exports = async (json) => {
       method: 'setLimits',
       asset: subch.asset,
       credit: subch.credit,
-      rebalance: subch.rebalance
+      rebalance: subch.rebalance,
     })
 
-    await me.flushChannel(ch.d.they_pubkey, false)
+    await me.flushChannel(ch.d.they_pubkey, false, {from: 'SetLimit'})
 
     //react({confirm: 'OK'})
   } else if (json.method == 'requestCredit') {
     me.send(ch.d.they_pubkey, {
       method: 'requestCredit',
       asset: json.asset,
-      amount: json.amount
+      amount: json.amount,
     })
   } else if (json.method == 'requestInsurance') {
     subch.requested_insurance = true
@@ -87,7 +87,7 @@ module.exports = async (json) => {
       action: json.action,
       asset: json.asset,
       amount: json.amount,
-      address: me.getAddress()
+      address: me.getAddress(),
     })
   }
 

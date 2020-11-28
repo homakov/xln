@@ -22,7 +22,7 @@ module.exports = async (s) => {
     prev_hash,
     timestamp,
     tx_root,
-    db_hash
+    db_hash,
   ] = r(s.header)
 
   total_blocks = readInt(total_blocks)
@@ -30,7 +30,7 @@ module.exports = async (s) => {
   built_by = readInt(built_by)
   prev_hash = toHex(prev_hash)
 
-  s.proposer = await User.findById(built_by, {include: [Balance]})
+  s.proposer = await User.findByPk(built_by, {include: [Balance]})
 
   if (!s.proposer) {
     l(`This user doesnt exist ${built_by}`)
@@ -39,9 +39,7 @@ module.exports = async (s) => {
 
   if (K.prev_hash != prev_hash) {
     l(
-      `Must be based on ${K.prev_hash} ${
-        K.total_blocks
-      } but is using ${prev_hash} ${total_blocks}`
+      `Must be based on ${K.prev_hash} ${K.total_blocks} but is using ${prev_hash} ${total_blocks}`
     )
     return false
   }
@@ -83,7 +81,7 @@ module.exports = async (s) => {
     outputs_volume: 0,
     parsed_tx: [],
     cron: [],
-    proposer: s.proposer
+    proposer: s.proposer,
   }
 
   // >>> Given block is considered valid and final after this point <<<
@@ -108,9 +106,7 @@ module.exports = async (s) => {
 
   if (K.total_blocks % 100 == 0 && cached_result.sync_started_at) {
     l(
-      `${base_port}: Block ${K.total_blocks} by ${built_by}. tx: ${
-        ordered_tx.length
-      }`
+      `${base_port}: Block ${K.total_blocks} by ${built_by}. tx: ${ordered_tx.length}`
     )
 
     // update browser UI about sync process
@@ -157,7 +153,7 @@ module.exports = async (s) => {
     all.push(
       Insurance.findAll({
         where: {dispute_delayed: {[Op.lte]: K.usable_blocks}},
-        include: [Subinsurance]
+        include: [Subinsurance],
       }).then(async (insurances) => {
         for (let ins of insurances) {
           s.meta.cron.push(['resolved', ins, await insuranceResolve(ins)])
@@ -170,7 +166,7 @@ module.exports = async (s) => {
     // Executing smart updates that are due
     let jobs = await Proposal.findAll({
       where: {delayed: {[Op.lte]: K.usable_blocks}},
-      include: {all: true}
+      include: {all: true},
     })
 
     for (let job of jobs) {
@@ -198,8 +194,8 @@ module.exports = async (s) => {
     all.push(
       Hashlock.destroy({
         where: {
-          delete_at: {[Op.lte]: K.usable_blocks}
-        }
+          delete_at: {[Op.lte]: K.usable_blocks},
+        },
       })
     )
   }
@@ -256,7 +252,7 @@ module.exports = async (s) => {
           s.meta.missed_validators.length >
         0
           ? JSON.stringify(s.meta)
-          : null
+          : null,
     })
   }
 
@@ -264,8 +260,8 @@ module.exports = async (s) => {
   // Tendermint uses 2/3+ prevotes as "proof of lock change"
   if (PK.locked_block) {
     //l('Unlocked at ' + K.total_blocks)
-    PK.locked_block = null
-    me.proposed_block = null
+    PK.locked_block = false
+    me.proposed_block = false
   }
 
   // only validators do snapshots, as they require extra computations
@@ -315,7 +311,7 @@ module.exports = async (s) => {
       portable: true,
       noMtime: true,
       file: datadir + '/offchain/' + filename,
-      filter: path_filter
+      filter: path_filter,
     }
 
     const paths = ['.']
