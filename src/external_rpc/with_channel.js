@@ -26,7 +26,7 @@ module.exports = async (pubkey, json, ws) => {
       await subch.save()
 
       // forced flush, gives them sig
-      await me.flushChannel(pubkey, false, {from: 'requestCredit'})
+      await me.flushChannel(pubkey, false)
 
       me.textMessage(
         ch.d.they_pubkey,
@@ -74,7 +74,7 @@ module.exports = async (pubkey, json, ws) => {
       ]
 
       if (!ec.verify(r(withdrawal), withdrawal_sig, pubkey)) {
-        l('Invalid withdrawal given', withdrawal)
+        l('Invalid withdrawal given', withdrawal, json)
         return false
       }
 
@@ -94,7 +94,7 @@ module.exports = async (pubkey, json, ws) => {
       }
 
       if (ch.d.status != 'main') {
-        return l('only return withdrawal to main status')
+        return l('only return withdrawal to main status, now ' + ch.d.status)
       }
 
       if (!ch.ins) {
@@ -108,10 +108,11 @@ module.exports = async (pubkey, json, ws) => {
       // TODO: don't forget hold
 
       // if we're bank, we let to withdraw from our onchain as well
-      // otherwise we let bank to withdraw only from their insured side
       if (me.my_bank) {
         var available = ch.derived[asset].they_available
       } else {
+        // otherwise we let bank to withdraw only from their insured side
+
         // if we'd let banks to withdraw they_available,
         // their compromise would lead to a disaster of failed credit
         var available =
@@ -143,22 +144,23 @@ module.exports = async (pubkey, json, ws) => {
         subch.they_withdrawal_amount = amount
       }
 
-      let withdrawal = r([
+      let weSigned = [
         methodMap('withdraw'),
         ch.ins.leftId,
         ch.ins.rightId,
         ch.ins.withdrawal_nonce,
         amount,
         asset,
-      ])
+      ]
 
       await subch.save()
 
       me.send(pubkey, {
         method: 'giveWithdrawal',
-        withdrawal_sig: ec(withdrawal, me.id.secretKey),
+        withdrawal_sig: ec(r(weSigned), me.id.secretKey),
         amount: amount,
         asset: asset,
+        weSigned,
       })
     } else if (json.method == 'testnet') {
       if (json.action == 'faucet') {
@@ -193,8 +195,7 @@ module.exports = async (pubkey, json, ws) => {
         r(fromHex(json.ackState)),
         fromHex(json.ackSig),
         json.transitions,
-        json.signedState,
-        json
+        json.signedState
       )
     })
 
@@ -205,7 +206,7 @@ module.exports = async (pubkey, json, ws) => {
   Sometimes sender is already included in flushable, so don't flush twice
   */
 
-    let flushed = [me.flushChannel(pubkey, json.transitions.length == 0, json)]
+    let flushed = [me.flushChannel(pubkey, json.transitions.length == 0)]
 
     if (flushable) {
       for (let fl of flushable) {

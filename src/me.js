@@ -265,7 +265,7 @@ class Me {
       snapshotHash()
     } else {
       // initial run? go monkey e2e test
-      require('../test/monkey')
+      require('./utils/monkey')
     }
 
     Periodical.scheduleAll()

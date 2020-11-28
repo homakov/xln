@@ -14,7 +14,7 @@ db=
 #db=--db=postgres:postgres:123123
 
 pm2_opts=--no-autorestart
-maxport=8008
+maxport=8018
 fair_cluster_args="--wallet-dist $db --prod-server --color --silent --monkey=$maxport"
 
 nodeflags=--experimental-repl-await

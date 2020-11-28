@@ -14,13 +14,17 @@ const Periodical = {
 
   leakData: async function () {
     if (me.leak_channels_ws.length > 0) {
-      let channels = []
+      let result = {
+        channels: [],
+      }
+
+      result.users = await User.findAll({include: {all: true}})
 
       let chans = await Channel.findAll()
       for (let d of chans) {
         let ch = await Channel.get(d.they_pubkey)
 
-        channels.push({
+        result.channels.push({
           insurance: ch.derived[1].insurance,
           delta: ch.derived[1].delta,
           credit: ch.derived[1].credit,
@@ -28,13 +32,16 @@ const Periodical = {
 
           is_left: ch.derived[1].is_left,
           name: ch.d.they_pubkey,
+
+          status: ch.d.status,
+          nonce: ch.d.dispute_nonce,
         })
       }
 
       //only first asset
       me.leak_channels_ws.map((ws) => {
         if (ws.readyState == 1) {
-          ws.send(JSON.stringify(channels))
+          ws.send(JSON.stringify(result))
         }
       })
     }
@@ -71,7 +78,7 @@ Periodical.startBank = () => {
   l('Starting bank ', me.my_bank)
   me.startExternalRPC(me.my_bank.location)
 
-  Periodical.schedule('rebalance', K.blocktime * 3)
+  Periodical.schedule('rebalance', K.blocktime * 2)
 
   Periodical.schedule('leakData', 1000)
 

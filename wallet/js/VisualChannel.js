@@ -53,47 +53,39 @@ export default {
     
 
       <div
-        v-if="derived.available_credit > 0"
         v-bind:style="styles('available_credit')"
         v-html="displayOrNot('available_credit')"
         class="progress-bar"
       ></div>
 
       <div
-        v-if="derived.insured > 0"
         v-bind:style="styles('insured')"
         v-html="displayOrNot('insured')"
         class="progress-bar"
       ></div>
 
-      <div v-if="derived.delta >= 0 && derived.delta < derived.insurance" v-bind:style="styles('gap')" class="progress-bar"></div>
-
       <div
-        v-if="derived.uninsured > 0"
         v-bind:style="styles('uninsured')"
         v-html="displayOrNot('uninsured')"
         class="progress-bar"
       ></div>
  
 
-      <div v-if="derived.delta < 0 || derived.delta >= derived.insurance" v-bind:style="styles('gap')" class="progress-bar"></div>
+      <div v-bind:style="styles('gap')" class="progress-bar"></div>
 
       <div
-        v-if="derived.they_uninsured > 0"
         v-bind:style="styles('they_uninsured')"
         v-html="displayOrNot('they_uninsured')"
         class="progress-bar"
       ></div>
 
       <div
-        v-if="derived.they_insured > 0"
         v-bind:style="styles('they_insured')"
         v-html="displayOrNot('they_insured')"
         class="progress-bar"
       ></div>
 
       <div
-        v-if="derived.they_available_credit > 0"
         v-bind:style="styles('they_available_credit')"
         v-html="displayOrNot('they_available_credit')"
         class="progress-bar"

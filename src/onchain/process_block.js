@@ -200,21 +200,6 @@ module.exports = async (s) => {
     )
   }
 
-  /*
-  if (K.bet_maturity && K.ts > K.bet_maturity) {
-    l('🎉 Maturity day! Copy all FRB balances to FRD')
-    s.meta.cron.push(['maturity'])
-
-    // first assignment must happen before zeroing
-    await onchainDB.db.query('UPDATE users SET balance1 = balance1 + balance2')
-    await onchainDB.db.query('UPDATE users SET balance2 = 0')
-    //await sequelize.query("UPDATE users SET ")
-    //User.update({ balance1: sequelize.literal('balance1 + balance2'), balance2: 0 }, {where: {id: {[Op.gt]: 0}}})
-
-    K.bet_maturity = false
-  }
-  */
-
   // saving current proposer and their fees earned
   all.push(s.meta.proposer.save())
 

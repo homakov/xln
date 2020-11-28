@@ -13,10 +13,36 @@ window.onload = function () {
   ws.onmessage = function (m) {
     let data = JSON.parse(m.data)
 
-    var caps = data.map((ch) => ch.insurance + ch.credit + ch.they_credit)
-    app.max_visual_capacity = Math.round(Math.max(...caps) * 1.1)
+    var caps = data.channels.map(
+      (ch) => ch.insurance + ch.credit + ch.they_credit
+    )
+    let max = Math.round(Math.max(...caps) * 1.1)
 
-    app.channels = data
+    for (let upper of [
+      1000,
+      5000,
+      10000,
+      20000,
+      30000,
+      40000,
+      50000,
+      80000,
+      100000,
+      200000,
+      500000,
+      1000000,
+      5000000,
+      10000000,
+    ]) {
+      if (max < upper * 100) {
+        max = upper * 100
+        break
+      }
+    }
+    app.max_visual_capacity = max
+
+    app.channels = data.channels
+    app.users = data.users
 
     console.log(data)
   }
@@ -42,6 +68,7 @@ window.onload = function () {
     data: {
       max_visual_capacity: 999999,
       channels: channels,
+      users: [],
 
       ch: {
         b1: channels,

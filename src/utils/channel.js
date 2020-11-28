@@ -164,11 +164,10 @@ refresh = function (ch) {
     // total channel capacity: insurance + credit on both sides
     out.capacity = out.insurance + out.credit + out.they_credit
 
-    if (out.available < 0 || out.they_available < 0) {
-      l('Invalid availables', JSON.stringify(out, null, 4))
-      //return
-      //fatal('invalid outs')
-    }
+    if (out.available < 0) out.available = 0
+    if (out.they_available < 0) out.they_available = 0
+
+    //l('Invalid availables', JSON.stringify(out, null, 4))
 
     // All stuff we show in the progress bar in the wallet
     out.bar =

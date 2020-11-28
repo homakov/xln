@@ -66,7 +66,7 @@ module.exports = async (json) => {
       rebalance: subch.rebalance,
     })
 
-    await me.flushChannel(ch.d.they_pubkey, false, {from: 'SetLimit'})
+    await me.flushChannel(ch.d.they_pubkey, false)
 
     //react({confirm: 'OK'})
   } else if (json.method == 'requestCredit') {

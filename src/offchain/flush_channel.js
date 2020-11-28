@@ -233,7 +233,7 @@ module.exports = async (pubkey, opportunistic, rawJSON) => {
 
       opportunistic: opportunistic,
 
-      rawJSON: rawJSON,
+      //rawJSON: rawJSON, for debug only
 
       transitions: transitions,
     }
@@ -242,7 +242,7 @@ module.exports = async (pubkey, opportunistic, rawJSON) => {
       // if there were any transitions, we need an ack on top
       ch.d.ack_requested_at = ts()
       //l('Set ack request ', ch.d.ack_requested_at, trim(pubkey))
-      ch.d.pending = stringify(data)
+      //ch.d.pending = stringify(data)
       ch.d.status = 'sent'
       if (trace) l(`Flushing ${transitions.length} to ${trim(pubkey)}`)
     }

@@ -1,16 +1,16 @@
-// make a request to ask for (mutual) withdrawal proof from partner
+// make a request to ask for mutual withdrawal proof from partner
 // the promise returns either a valid proof or error
-module.exports = async function(ch, subch, amount) {
+module.exports = async function (ch, subch, amount) {
   // reset values
   //ch.d.withdraw_sig = null
   //ch.d.withdraw_amount = 0
 
-  l('Withdrawal request for ' + amount)
+  l('Withdraw request for ' + amount, ch.ins.withdrawal_nonce)
 
   me.send(ch.d.they_pubkey, {
     method: 'requestWithdrawal',
     amount: amount,
-    asset: subch.asset
+    asset: subch.asset,
   })
 
   return new Promise(async (resolve) => {

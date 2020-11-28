@@ -17,6 +17,20 @@
   </head>
   <body>
     <div class="container" id="app">
+      <h1>Onchain</h1>
+      <div v-for="(u, u_id) in users" v-bind:key="'u'+u.pubkey">
+        {{u.pubkey.substr(0,6)}}
+        <div class="progress" style="width: 100%; background-color: #ffffff">
+          <div
+            v-bind:style="{width: ((u.balances[0].balance * 100)/ max_visual_capacity).toFixed(3)+'%', 'background-color':'#5cb85c'}"
+            class="progress-bar"
+          >
+            {{commy(u.balances[0].balance)}}
+          </div>
+        </div>
+      </div>
+
+      <h1>Firstbank</h1>
       <div v-for="(ch, ch_id) in channels" v-bind:key="ch.name">
         <br />
         <span>{{ch.name.substr(0,6)}}</span>
@@ -33,6 +47,8 @@
         v-model="cmd"
         style="width: 800px"
       ></textarea>
+
+      Scale: {{commy(max_visual_capacity)}}
 
       <button class="btn btn-success" @click="execCmd">Add a Channel</button>
     </div>

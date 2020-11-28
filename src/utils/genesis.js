@@ -15,7 +15,7 @@ const createValidator = async (username, pw, loc, website) => {
 
   await user.createBalance({
     asset: 1,
-    balance: 10000000000,
+    balance: 1000000000,
   })
   await user.createBalance({
     asset: 2,
@@ -60,9 +60,6 @@ module.exports = async (datadir) => {
     step_latency: 1 * sec, // how long is each consensus step: propose, prevote, precommit, await is the rest
     gossip_delay: 0.5 * sec, // anti clock skew, give others time to change state
 
-    //Time.at(1913370000) => 2030-08-19 20:40:00 +0900
-
-    bet_maturity: ts() + 100 * sec, // when all FRB turn into FRD
     created_at: ts(),
 
     usable_blocks: 0, // blocks that have some extra space (to ensure disputes add on-time)
@@ -91,7 +88,7 @@ module.exports = async (datadir) => {
     account_creation_fee: 100,
 
     standalone_balance: 1000, // keep $10 on your own balance for unexpected onchain fees
-    bank_standalone_balance: 100000, // bank has higher operational costs, so $1k is safer for unexpected onchain fees
+    bank_standalone_balance: 100000, // bank has higher operational costs
 
     // up to X seconds, validators don't propose blocks if empty
     // the problem is all delayed actions also happen much later if no blocks made
@@ -103,7 +100,7 @@ module.exports = async (datadir) => {
     risk: 10000, // banks usually withdraw after this amount
 
     credit: 1000000, // how much can a user lose if bank is insolvent?
-    rebalance: 300000, // rebalance after
+    rebalance: 100000, // rebalance after
 
     collected_fees: 0,
 
@@ -273,7 +270,7 @@ module.exports = async (datadir) => {
 
   await Asset.create({
     ticker: 'FRD',
-    name: 'Fair dollar',
+    name: 'Token',
     desc: 'FRD',
     issuerId: 1,
     total_supply: 1000000000,
@@ -282,8 +279,7 @@ module.exports = async (datadir) => {
   await Asset.create({
     ticker: 'FRB',
     name: 'Fair bet',
-    desc:
-      'Capped at 100 billions, will be automatically converted into FRD 1-for-1 on 2030-08-19.',
+    desc: 'Balance',
     issuerId: 1,
     total_supply: 1000000000,
   })

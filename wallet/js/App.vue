@@ -358,7 +358,7 @@
               <th>
                 <UserIcon :hash="u.pubkey" :size="30"></UserIcon>
               </th>
-              <th scope="row">{{to_user(u.id)}}</th>
+              <th scope="row">{{toUser(u.id)}}</th>
 
               <td><small>{{u.pubkey.substr(0,10)}}..</small></td>
               <td><span v-for="b in u.balances">{{to_ticker(b.asset)}}: {{commy(b.balance)}}&nbsp;</span></td>
@@ -383,8 +383,8 @@
           </thead>
           <tbody>
             <tr v-for="ins in insurances">
-              <th v-html="to_user(ins.leftId)"></th>
-              <th v-html="to_user(ins.rightId)"></th>
+              <th v-html="toUser(ins.leftId)"></th>
+              <th v-html="toUser(ins.rightId)"></th>
               <th><span v-for="subins in ins.subinsurances">{{to_ticker(subins.asset)}}: {{commy(subins.balance)}}</span></th>
               <th>{{ins.withdrawal_nonce}}</th>
               <th>{{ins.dispute_delayed ? "Until "+ins.dispute_delayed+" started by "+(ins.dispute_left ? 'Left' : 'Right') : "No" }}</th>

@@ -20,7 +20,7 @@ General recommendations:
 
 const withdraw = require('../offchain/withdraw')
 
-module.exports = async function() {
+module.exports = async function () {
   if (PK.pendingBatchHex || me.batch.length > 0) {
     return //l('There are pending tx')
   }
@@ -55,7 +55,7 @@ module.exports = async function() {
         } else if (derived.insured >= minRisk) {
           if (me.sockets[ch.d.they_pubkey]) {
             // they either get added in this rebalance or next one
-            //l('Request withdraw withdraw: ', derived)
+            //l('Request withdraw: ', derived)
             netSpenders.push(withdraw(ch, subch, derived.insured))
           } else if (subch.withdrawal_requested_at == null) {
             l('Delayed pull')
@@ -82,15 +82,15 @@ module.exports = async function() {
         weOwn += subch.withdrawal_amount
         let user = await User.findOne({
           where: {pubkey: ch.d.they_pubkey},
-          include: [Balance]
+          include: [Balance],
         })
 
         me.batchAdd('withdraw', [
           subch.asset,
-          [subch.withdrawal_amount, user.id, subch.withdrawal_sig]
+          [subch.withdrawal_amount, user.id, subch.withdrawal_sig],
         ])
       } else {
-        // offline? dispute
+        l('offline? dispute', subch)
         subch.withdrawal_requested_at = ts()
       }
     }
@@ -116,16 +116,14 @@ module.exports = async function() {
       if (weOwn >= safety) {
         me.batchAdd('deposit', [
           asset,
-          [ch.derived[asset].they_uninsured, me.record.id, ch.d.they_pubkey, 0]
+          [ch.derived[asset].they_uninsured, me.record.id, ch.d.they_pubkey, 0],
         ])
 
         // nullify their insurance request
         ch.derived[asset].subch.they_requested_insurance = false
       } else {
         l(
-          `Run out of funds for asset ${asset}, own ${weOwn} need ${
-            ch.derived[asset].they_uninsured
-          }`
+          `Run out of funds for asset ${asset}, own ${weOwn} need ${ch.derived[asset].they_uninsured}`
         )
         break
       }

@@ -5,8 +5,7 @@ module.exports = async (
   ackState,
   ackSig,
   transitions,
-  theirSignedState,
-  rawJSON
+  theirSignedState
 ) => {
   let ch = await Channel.get(pubkey)
   ch.last_used = ts()
@@ -39,7 +38,6 @@ module.exports = async (
   prettyState(ackState)
 
   let mismatch = (reason, lastState) => {
-    console.log('rawJSON:', stringify(rawJSON.rawJSON))
     l(`=========${reason}. Rollback ${ch.d.rollback_nonce}
   Current state 
   ${ascii_state(ch.state)}
@@ -197,7 +195,6 @@ module.exports = async (
       // things below can happen even when partner is honest
 
       if (amount < K.min_amount || amount > derived.they_available) {
-        l('Bad amount: ', amount, derived)
         failure = 'AmountOverAvailable'
       }
       // these things CANT happen, partner is malicious so just ignore and break

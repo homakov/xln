@@ -12,13 +12,14 @@ const payMonkey = async (on_server, counter = 1) => {
 
   await me.payChannel({
     address: parsedAddress.address,
-    amount: 50000 + Math.round(Math.random() * 100000),
+    amount: 50000 + Math.round(Math.random() * 50000),
     asset: 1,
   })
 
   const reg = await getUserByIdOrKey(parsedAddress.pubkey)
 
   // onchain payment (batched, not sent to validator yet)
+  /*
   me.batchAdd('deposit', [
     1,
     [
@@ -27,6 +28,7 @@ const payMonkey = async (on_server, counter = 1) => {
       0,
     ],
   ])
+  */
 
   // run on server infinitely and with longer delays
   // but for local tests limit requests and run faster
@@ -35,7 +37,7 @@ const payMonkey = async (on_server, counter = 1) => {
 
     setTimeout(() => {
       payMonkey(on_server, counter + 1)
-    }, Math.round(1000 + Math.random() * 9000))
+    }, Math.round(1000 + Math.random() * 5000))
   } else if (counter < 6) {
     setTimeout(() => {
       payMonkey(on_server, counter + 1)
@@ -64,7 +66,7 @@ let run = async () => {
       // ensure 1st bank node is up already
       await sleep(2000)
 
-      await require('../src/internal_rpc/with_channel')({
+      await require('../internal_rpc/with_channel')({
         method: 'setLimits',
         they_pubkey: K.banks[0].pubkey,
         asset: 1,
@@ -88,14 +90,14 @@ let run = async () => {
         // withdraw 12.34 from bank and deposit 9.12 to 3 @ 1
         let ch = await Channel.get(K.banks[0].pubkey)
 
-        let withdrawn = await require('../src/internal_rpc/with_channel')({
+        let withdrawn = await require('../internal_rpc/with_channel')({
           method: 'withdraw',
           they_pubkey: toHex(ch.d.they_pubkey),
           asset: 1,
           amount: 1234,
         })
 
-        require('../src/internal_rpc/external_deposit')({
+        require('../internal_rpc/external_deposit')({
           asset: 1,
           userId: 3,
           bank: 1,
@@ -179,7 +181,7 @@ let run = async () => {
     // trigger the dispute from bank
 
     //me.CHEAT_dontack = true
-    me.CHEAT_dontwithdraw = true
+    //me.CHEAT_dontwithdraw = true
 
     setTimeout(() => {
       me.payChannel({
