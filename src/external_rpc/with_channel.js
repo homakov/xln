@@ -8,7 +8,7 @@ module.exports = async (pubkey, json, ws) => {
       let subch = ch.d.subchannels.by('asset', json.asset)
 
       subch.they_credit = json.credit
-      subch.they_rebalance = json.rebalance
+      subch.they_acceptable_rebalance = json.acceptable_rebalance
       await subch.save()
 
       me.textMessage(ch.d.they_pubkey, 'Updated credit limits')

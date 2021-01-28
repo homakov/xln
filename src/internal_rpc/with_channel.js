@@ -51,7 +51,7 @@ module.exports = async (json) => {
     react({confirm: 'OK'})
   } else if (json.method == 'setLimits') {
     subch.credit = json.credit
-    subch.rebalance = json.rebalance
+    subch.acceptable_rebalance = json.acceptable_rebalance
 
     // nothing happened
 
@@ -63,7 +63,7 @@ module.exports = async (json) => {
       method: 'setLimits',
       asset: subch.asset,
       credit: subch.credit,
-      rebalance: subch.rebalance,
+      acceptable_rebalance: subch.acceptable_rebalance,
     })
 
     await me.flushChannel(ch.d.they_pubkey, false)

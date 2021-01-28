@@ -134,7 +134,7 @@ module.exports = async (a) => {
           //child_process.execSync(``)
           // free up port
           delete me.busyPorts[nextPort]
-        }, 30 * 60 * 1000)
+        }, 300 * 60 * 1000)
 
         res.end('redirect')
       } else {
@@ -205,12 +205,12 @@ module.exports = async (a) => {
     }
   } else if (argv['wallet-dist']) {
     let dist = path.resolve(__dirname, '../dist')
-    console.log('Start parcel at dist ' + dist)
+    l(note('Start parcel at dist ' + dist))
     bundler = serveStatic(dist)
   } else {
     let Parcel = require('parcel-bundler')
     let index = path.resolve(__dirname, '../wallet/index.html')
-    console.log('Start parcel at ' + index)
+    l(note('Start parcel at ' + index))
     bundler = new Parcel(index, {
       logLevel: 2,
       // for more options https://parceljs.org/api.html

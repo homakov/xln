@@ -100,7 +100,7 @@ module.exports = async (datadir) => {
     risk: 10000, // banks usually withdraw after this amount
 
     credit: 1000000, // how much can a user lose if bank is insolvent?
-    rebalance: 100000, // rebalance after
+    acceptable_rebalance: 100, // in basis points, acceptable fee
 
     collected_fees: 0,
 

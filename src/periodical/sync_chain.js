@@ -18,7 +18,7 @@ module.exports = () => {
       limit: parseInt(argv.sync_limit ? argv.sync_limit : K.sync_limit),
 
       prev_hash: K.prev_hash,
-      network_name: K.network_name
+      network_name: K.network_name,
     })
   }
 
@@ -29,8 +29,8 @@ module.exports = () => {
   // is there new block expected & we didn't request for a while
   if (
     !cached_result.sync_started_at &&
-    K.ts + K.blocktime + 2000 < now &&
-    me.last_sync_chain + 5000 < now
+    K.ts + K.blocktime < now //&&
+    //me.last_sync_chain + 5000 < now
   ) {
     // await returnChain from now on
     me.last_sync_chain = now

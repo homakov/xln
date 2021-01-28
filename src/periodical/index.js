@@ -16,9 +16,10 @@ const Periodical = {
     if (me.leak_channels_ws.length > 0) {
       let result = {
         channels: [],
+        users: cached_result.users,
       }
 
-      result.users = await User.findAll({include: {all: true}})
+      //cached_result.users = await User.findAll({include: {all: true}})
 
       let chans = await Channel.findAll()
       for (let d of chans) {

@@ -139,7 +139,9 @@ module.exports = async (pubkey, opportunistic, rawJSON) => {
             if (me.my_bank && t.amount > derived.available) {
               me.textMessage(
                 ch.d.they_pubkey,
-                `Cant send ${t.amount} available ${derived.available}, extend credit`
+                `Not enough inbound capacity to receive a payment, extend credit by ${
+                  t.amount - derived.available
+                }`
               )
             }
 

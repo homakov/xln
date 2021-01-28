@@ -83,7 +83,7 @@ class Me {
         method: 'setLimits',
         they_pubkey: K.banks[0].pubkey,
         asset: 1,
-        rebalance: K.rebalance,
+        acceptable_rebalance: K.acceptable_rebalance,
         credit: K.credit,
       })
     }
@@ -264,7 +264,7 @@ class Me {
     if (K.total_blocks > 1) {
       snapshotHash()
     } else {
-      // initial run? go monkey e2e test
+      // initial run? monkey e2e test
       require('./utils/monkey')
     }
 

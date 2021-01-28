@@ -435,9 +435,9 @@ const insuranceResolve = async (ins) => {
     // nullify offdeltas
     for (let subch of ch.d.subchannels) {
       subch.offdelta = 0
-      subch.rebalance = 0
+      subch.acceptable_rebalance = 0
       subch.credit = 0
-      subch.they_rebalance = 0
+      subch.they_acceptable_rebalance = 0
       subch.they_credit = 0
 
       await subch.save()

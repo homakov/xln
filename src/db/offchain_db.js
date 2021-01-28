@@ -64,11 +64,6 @@ const defineModels = (sequelize) => {
         defaultValue: null,
       },
 
-      could_rebalance: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false,
-      },
-
       last_online: Sequelize.DATE,
       withdrawal_requested_at: Sequelize.DATE,
 
@@ -113,7 +108,7 @@ const defineModels = (sequelize) => {
       },
 
       // by default all limits set to 0
-      rebalance: {
+      acceptable_rebalance: {
         type: Sequelize.INTEGER,
         defaultValue: 0,
       },
@@ -122,7 +117,7 @@ const defineModels = (sequelize) => {
         defaultValue: 0,
       }, // we trust up to
 
-      they_rebalance: {
+      they_acceptable_rebalance: {
         type: Sequelize.INTEGER,
         defaultValue: 0,
       },

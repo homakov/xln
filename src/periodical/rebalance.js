@@ -27,6 +27,8 @@ module.exports = async function () {
 
   let deltas = await Channel.findAll()
 
+  let current_rebalance_fee = K.min_gasprice * 200
+
   for (let asset = 1; asset <= 2; asset++) {
     let minRisk = 500
     let netSpenders = []
@@ -47,8 +49,10 @@ module.exports = async function () {
         if (
           derived.they_uninsured > 0 &&
           (subch.they_requested_insurance ||
-            (subch.they_rebalance > 0 &&
-              derived.they_uninsured >= subch.they_rebalance))
+            (subch.they_acceptable_rebalance > 0 &&
+              derived.they_uninsured >=
+                (current_rebalance_fee * 10000) /
+                  subch.they_acceptable_rebalance))
         ) {
           //l('Adding output for our promise ', ch.d.they_pubkey)
           netReceivers.push(ch)
@@ -101,7 +105,7 @@ module.exports = async function () {
       weOwn -= d.amount_left
     }
 
-    // sort receivers, larger ones are given priority
+    // sort receivers, bigger ones are given priority
     netReceivers.sort(
       (a, b) =>
         b.derived[asset].they_uninsured - a.derived[asset].they_uninsured

@@ -43,7 +43,7 @@ module.exports = async (s, args) => {
         method: 'setLimits',
         they_pubkey: bank.pubkey,
         asset: 1,
-        rebalance: K.rebalance,
+        acceptable_rebalance: K.acceptable_rebalance,
         credit: K.credit,
       })
     }

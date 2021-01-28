@@ -165,12 +165,12 @@
               </h1>
               <p>
                 <template v-for="subch in ch.d.subchannels">
-                  <visual-channel :derived="ch.derived[subch.asset]" :max_visual_capacity="max_visual_capacity[subch.asset]"></visual-channel>
+                  <visual-channel :derived="ch.derived[subch.asset]" :max_visual_capacity="max_visual_capacity[subch.asset]" :commy="commy"></visual-channel>
 
-                  <h5><a class="dotted" style="float:right" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">Inbound Capacity: {{commy(ch.derived[subch.asset].they_available)}}</a></h5>
+                  <h5><a class="dotted" style="float:right" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), acceptable_rebalance: acceptable_rebalance}">Inbound Capacity: {{commy(ch.derived[subch.asset].they_available)}}</a></h5>
 
 
-                  <h5><a class="dotted" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{toTicker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}}{{elaborateAvailable(ch.derived[subch.asset])}}</a></h5>
+                  <h5><a class="dotted" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), acceptable_rebalance: subch.acceptable_rebalance}">{{toTicker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}}{{elaborateAvailable(ch.derived[subch.asset])}}</a></h5>
 
 
                 <p>
@@ -178,7 +178,7 @@
                   <span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: ch.d.they_pubkey, method: 'testnet', action: 'faucet', asset: subch.asset, amount: 10000 })">Faucet</span>
 
 
-                  <span v-if="subch.requested_insurance || (subch.rebalance > 0 && ch.derived[subch.asset].uninsured >= subch.rebalance)"  class="badge badge-success">Await Insurance <dotsloader ></dotsloader>
+                  <span v-if="subch.requested_insurance || (subch.acceptable_rebalance > 0 && ch.derived[subch.asset].uninsured >= subch.acceptable_rebalance)"  class="badge badge-success">Await Insurance <dotsloader ></dotsloader>
                   </span>
                   <span v-else-if="ch.derived[subch.asset].uninsured>0" class="badge badge-success" @click="requestInsurance(ch, subch.asset)">Request Insurance</span>
                   
@@ -284,7 +284,7 @@
 
                   <td>{{toUser(channels.find(ch=>ch.d.id==h.channelId).partner)}}</td>
 
-                  <td width="15%"><span v-bind:class="['badge', h.is_inward ? 'badge-success' : 'badge-danger']">{{toTicker(h.asset)}} {{commy(h.is_inward ? h.amount : -h.amount)}}</span> {{paymentStatus(h)}}</td>
+                  <td width="15%"><span v-bind:class="['badge', h.is_inward ? 'badge-success' : 'badge-danger']">{{h.is_inward ? '+'+commy(h.amount) : commy(-h.amount)}} {{toTicker(h.asset)}}</span> {{paymentStatus(h)}}</td>
                   <td>{{commy(h.resulting_balance)}}</td>
                 </tr>
               </transition-group>
@@ -361,7 +361,7 @@
               <th scope="row">{{toUser(u.id)}}</th>
 
               <td><small>{{u.pubkey.substr(0,10)}}..</small></td>
-              <td><span v-for="b in u.balances">{{to_ticker(b.asset)}}: {{commy(b.balance)}}&nbsp;</span></td>
+              <td><span v-for="b in u.balances">{{toTicker(b.asset)}}: {{commy(b.balance)}}&nbsp;</span></td>
               <td>{{u.batch_nonce}}</td>
               <td>{{u.debts.length}}</td>
             </tr>
@@ -385,7 +385,7 @@
             <tr v-for="ins in insurances">
               <th v-html="toUser(ins.leftId)"></th>
               <th v-html="toUser(ins.rightId)"></th>
-              <th><span v-for="subins in ins.subinsurances">{{to_ticker(subins.asset)}}: {{commy(subins.balance)}}</span></th>
+              <th><span v-for="subins in ins.subinsurances">{{toTicker(subins.asset)}}: {{commy(subins.balance)}}</span></th>
               <th>{{ins.withdrawal_nonce}}</th>
               <th>{{ins.dispute_delayed ? "Until "+ins.dispute_delayed+" started by "+(ins.dispute_left ? 'Left' : 'Right') : "No" }}</th>
             </tr>
@@ -669,17 +669,17 @@
                   <p>
                     <input type="text" class="form-control" v-model="mod.credit">
                   </p>
-                  <p>Automatically request insurance after</p>
+                  <p>Acceptable rebalance fee: {{commy(mod.acceptable_rebalance)}}%</p>
                   <p>
-                    <input type="text" class="form-control" v-model="mod.rebalance">
+                    <input type="text" class="form-control" v-model="mod.acceptable_rebalance">
                   </p>
                   <p>
-                    <button type="button" class="btn btn-outline-success" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'setLimits', credit: uncommy(mod.credit), rebalance: uncommy(mod.rebalance)})" href="#">Set Credit Limits</button>
+                    <button type="button" class="btn btn-outline-success" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'setLimits', credit: uncommy(mod.credit), acceptable_rebalance: uncommy(mod.acceptable_rebalance)})" href="#">Set Credit Limits</button>
                   </p>
 
                 </div>
 
-                <visual-channel :derived="current_derived" :max_visual_capacity="max_visual_capacity[mod.subch.asset]"></visual-channel>
+                <visual-channel :commy="commy" :derived="current_derived" :max_visual_capacity="max_visual_capacity[mod.subch.asset]" ></visual-channel>
 
 
 
@@ -694,7 +694,11 @@
 </template>
 
 <script>
-import Vue from 'vue'
+//import Vue from 'vue'
+/*
+Vue.exports = {
+    runtimeCompiler: true
+}*/
 
 const plugin = {
   install() {
@@ -724,7 +728,7 @@ const plugin = {
         prefix = prefix + withSymbol
       }
 
-      return prefix + b.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+      return prefix + b.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
 
     }
     Vue.commy = Vue.prototype.commy

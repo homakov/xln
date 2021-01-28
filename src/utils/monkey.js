@@ -34,10 +34,10 @@ const payMonkey = async (on_server, counter = 1) => {
   // but for local tests limit requests and run faster
   if (on_server) {
     // replenish with testnet faucet once in a while
-
-    setTimeout(() => {
+    /*setTimeout(() => {
       payMonkey(on_server, counter + 1)
     }, Math.round(1000 + Math.random() * 5000))
+    */
   } else if (counter < 6) {
     setTimeout(() => {
       payMonkey(on_server, counter + 1)
@@ -70,7 +70,7 @@ let run = async () => {
         method: 'setLimits',
         they_pubkey: K.banks[0].pubkey,
         asset: 1,
-        rebalance: K.rebalance,
+        acceptable_rebalance: K.acceptable_rebalance,
         credit: K.credit,
       })
 
