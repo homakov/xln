@@ -3,74 +3,78 @@
 const Router = require('../router')
 const withdraw = require('../offchain/withdraw')
 
-/*
-let setBrowser = (ws) => {
-  // new window replaces old one
-  if (me.browser && me.browser.readyState == 1) {
-    me.browser.send(JSON.stringify({already_opened: true}))
-  }
-
-  me.browser = ws
-}
-*/
-
-module.exports = async (ws, json) => {
-  // prevents all kinds of CSRF and DNS rebinding
-  // strong coupling between the console and the browser client
-
+module.exports = async function (ws, json) {
   if (json.leak_channels) {
-    me.leak_channels_ws.push(ws)
+    this.leak_channels_ws.push(ws)
     return
   }
-
-  // public RPC, return cached_result only
-  if (json.auth_code != PK.auth_code && ws != 'admin') {
+  // auth_code prevents all kinds of CSRF and DNS rebinding
+  // strong coupling between the daemon and the browser client
+  if (json.auth_code != this.Config.auth_code && ws != 'admin') {
     //if (!json.auth_code) {
     //l('Not authorized')
-    let resp =
-      json.method == 'login'
-        ? {alert: 'Invalid auth_code, restart node'}
-        : cached_result
-    ws[ws.end ? 'end' : 'send'](JSON.stringify(resp))
-
+    ws[ws.end ? 'end' : 'send'](
+      JSON.stringify({alert: 'Invalid auth_code, restart node'})
+    )
     return
   }
 
-  if (ws.send && json.is_wallet && !me.browsers.includes(ws)) {
-    me.browsers.push(ws)
+  if (ws.send && json.is_wallet && !this.browsers.includes(ws)) {
+    this.browsers.push(ws)
     //setBrowser(ws)
   }
 
   // internal actions that require authorization
 
-  var result = {}
   switch (json.method) {
     case 'load':
       // triggered by frontend to update
 
       // public + private info
-      //react({public: true, private: true, force: true})
+      this.react({force: true})
       //return
 
       break
     case 'login':
-      await require('./login')(json.params)
-      return
+      if (json.params.username.length == 66) {
+        this.Config.seed = json.params.username
+      } else {
+        this.Config.seed =
+          '0x' +
+          (
+            await require('../utils/derive')(
+              json.params.username,
+              json.params.password
+            )
+          ).toString('hex')
+      }
+      await this.start(this.Config.seed)
+      this.react({})
 
       break
 
     case 'logout':
-      result = require('./logout')()
+      if (this.external_http_server) {
+        this.external_http_server.close()
+        this.external_wss.clients.forEach((c) => c.close())
+        // Object.keys(me.sockets).forEach( c=>me.sockets[c].end() )
+      }
+
+      this.Config = {}
+
+      this.fatal(1)
+
+      this.react({pubkey: null})
       break
 
     case 'sendOffchain':
-      await me.payChannel(json.params)
+      await this.payChannel(json.params)
       break
 
     case 'startDispute':
-      let ch = await Channel.get(json.params.they_pubkey)
-      me.batchAdd('dispute', await startDispute(ch))
-      react({confirm: 'OK'})
+      let ch = await this.getChannel(json.params.they_pubkey)
+
+      this.react({confirm: 'OK'})
 
       break
     case 'withChannel':
@@ -78,10 +82,10 @@ module.exports = async (ws, json) => {
       break
 
     case 'onchainFaucet':
-      json.params.pubkey = me.pubkey
+      json.params.pubkey = this.pubkey
       json.params.method = 'onchainFaucet'
 
-      me.send(K.banks[0], json.params)
+      this.send(Config.banks[0], json.params)
 
       break
 
@@ -91,140 +95,36 @@ module.exports = async (ws, json) => {
 
     case 'broadcast':
       Periodical.broadcast(json.params)
-      react({force: true})
+      this.react({force: true})
       return false
       break
 
     case 'getRoutes':
-      result.parsedAddress = await parseAddress(json.params.address)
-
-      result.bestRoutes = await Router.bestRoutes(
-        json.params.address,
-        json.params
-      )
+      let bestRoutes = await Router.bestRoutes(json.params.address, json.params)
+      this.react({
+        parsedAddress: await parseAddress(json.params.address),
+        bestRoutes: bestRoutes,
+      })
 
       break
 
     case 'clearBatch':
-      me.batch = []
+      this.batch = []
       react({confirm: 'Batch cleared'})
       break
 
     case 'getinfo':
-      result = require('./get_info')()
+      this.react(require('./get_info')())
       break
 
-    case 'toggleBank':
-      let index = PK.usedBanks.indexOf(json.params.id)
-      if (index == -1) {
-        PK.usedBanks.push(json.params.id)
-
-        let bank = K.banks.find((h) => h.id == json.params.id)
-
-        require('./with_channel')({
-          method: 'setLimits',
-          they_pubkey: bank.pubkey,
-          asset: 1,
-          acceptable_rebalance: K.acceptable_rebalance,
-          credit: K.credit,
-        })
-
-        //result.confirm = 'Bank added'
-      } else {
-        // ensure no connection
-        PK.usedBanks.splice(index, 1)
-
-        result.confirm = 'Bank removed'
-      }
-      react({force: true})
-
-      break
-    case 'toggleAsset':
-      if ([1, 2].includes(json.params.id)) {
-        react({alert: 'This asset is required by the system'})
-        return
-      }
-      let assetIndex = PK.usedAssets.indexOf(json.params.id)
-      if (assetIndex == -1) {
-        PK.usedAssets.push(json.params.id)
-
-        result.confirm = 'Asset added'
-      } else {
-        PK.usedAssets.splice(assetIndex, 1)
-
-        result.confirm = 'Asset removed'
-      }
-      react({force: true})
-
-      break
-
-    case 'createAsset':
-      let amount = parseInt(json.params.amount)
-
-      // 256**6, buffer max size
-      if (amount >= 281474976710000) return
-
-      me.batch.push([
-        'createAsset',
-        [json.params.ticker, amount, json.params.name, json.params.desc],
-      ])
-
-      react({confirm: 'Added to batch', force: true})
-      break
-
-    case 'createBank':
-      let p = json.params
-
-      p.fee_bps = parseInt(p.fee_bps)
-
-      p.box_pubkey = toHex(bin(me.box.publicKey))
-
-      if (p.add_routes && p.add_routes.length > 0) {
-        p.add_routes = p.add_routes.split(',').map((f) => parseInt(f))
-      }
-      if (p.remove_routes && p.remove_routes.length > 0) {
-        p.remove_routes = p.remove_routes.split(',').map((f) => parseInt(f))
-      }
-      l('create bank p ', p)
-
-      me.batchAdd('createBank', stringify(p))
-      react({confirm: 'Added to batch'})
-      break
-    /*
-    case 'createOrder':
-      require('./create_order')(json.params)
-      react({confirm: 'Added to batch'})
-      break
-
-    case 'cancelOrder':
-      require('./cancel_order')(json.params)
-      react({confirm: 'Added to batch'})
-      break*/
-
-    case 'propose':
-      result = require('./propose')(json.params)
-      break
-
-    case 'vote':
-      result = require('./vote')(json.params)
-      break
-
-    case 'sync':
-      result = require('./sync')(json.params)
-      break
-
-    // commonly called by merchant app on the same server
+    // to be called by merchant app on the same server
     case 'receivedAndFailed':
-      result = await require('./received_and_failed')(ws)
+      //result = await require('./received_and_failed')(ws)
       break
 
     default:
-      result.alert = 'No method provided'
+      this.react({alert: 'No method provided'})
   }
-
-  result.authorized = true
-
-  react({public: true, private: true, force: json.method == 'load'})
 
   // http or websocket?
   if (ws.end) {
@@ -232,7 +132,7 @@ module.exports = async (ws, json) => {
   } else if (ws == 'admin') {
     return result
   } else {
-    ws.send(JSON.stringify(result))
+    //ws.send(JSON.stringify(result))
     //react(result)
   }
 }

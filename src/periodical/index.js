@@ -1,10 +1,6 @@
 const Periodical = {
-  consensus: require('../consensus'),
-
-  syncChain: require('./sync_chain'),
   syncChanges: require('./sync_changes'),
-  updateMetrics: require('./update_metrics'),
-  updateCache: require('./update_cache'),
+
   rebalance: require('./rebalance'),
   ensureAck: require('./ensure_ack'),
   broadcast: require('./broadcast'),
@@ -19,11 +15,9 @@ const Periodical = {
         users: cached_result.users,
       }
 
-      //cached_result.users = await User.findAll({include: {all: true}})
-
       let chans = await Channel.findAll()
       for (let d of chans) {
-        let ch = await Channel.get(d.they_pubkey)
+        let ch = await me.getChannel(d.they_pubkey)
 
         result.channels.push({
           insurance: ch.derived[1].insurance,
@@ -69,32 +63,10 @@ Periodical.schedule = function schedule(task, timeout) {
   wrap()
 }
 
-Periodical.startValidator = () => {
-  l('Starting validator ', me.my_validator)
-  me.startExternalRPC(me.my_validator.location)
-  Periodical.schedule('consensus', 100)
-}
-
 Periodical.startBank = () => {
-  l('Starting bank ', me.my_bank)
   me.startExternalRPC(me.my_bank.location)
 
-  Periodical.schedule('rebalance', K.blocktime * 2)
-
-  Periodical.schedule('leakData', 1000)
-
-  // banks have to force react regularly
-  Periodical.schedule('forceReact', K.blocktime)
-  //}
-}
-
-Periodical.scheduleAll = function () {
-  Periodical.schedule('updateMetrics', 1000)
-  Periodical.schedule('updateCache', K.blocktime)
-
-  Periodical.schedule('syncChanges', K.blocktime)
-
-  //Periodical.schedule('ensureAck', K.blocktime * 2)
+  Periodical.schedule('rebalance', Config.blocktime * 2)
 }
 
 module.exports = Periodical

@@ -1,10 +1,9 @@
 // derives private key from username and password using memory hard alg
-// Why brainwallets are great: https://medium.com/fairlayer/why-brainwallet-are-great-for-cryptocurrency-ff73dd65ecd9
 
-module.exports = async (username, pw) => {
+module.exports = async (username, password) => {
   return new Promise((resolve, reject) => {
     require('../../lib/scrypt')(
-      pw,
+      password,
       username,
       {
         N: Math.pow(2, 12),
@@ -14,7 +13,7 @@ module.exports = async (username, pw) => {
         encoding: 'binary'
       },
       (r) => {
-        r = bin(r)
+        r = Buffer.from(r)
         resolve(r)
       }
     )

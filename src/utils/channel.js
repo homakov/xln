@@ -68,9 +68,6 @@ resolveChannel = (insurance, delta, is_left = true) => {
   return parts
 }
 
-const paymentToLock = (payment) => {
-  return [payment.amount, payment.hash, payment.exp]
-}
 
 refresh = function (ch) {
   // Canonical state.
@@ -175,7 +172,7 @@ refresh = function (ch) {
 
     ch.state[2].push([
       subch.asset,
-      encodeSignedInt(subch.offdelta),
+      subch.offdelta,
       out[ch.d.isLeft() ? 'inwards' : 'outwards'].map((t) => paymentToLock(t)),
       out[ch.d.isLeft() ? 'outwards' : 'inwards'].map((t) => paymentToLock(t)),
     ])
@@ -199,26 +196,4 @@ refresh = function (ch) {
   return ch.state
 }
 
-saveId = async function (obj) {
-  // only save if it has no id now
-  //if (!obj.id) {
-  await obj.save()
-  //}
 
-  if (obj.balances) {
-    for (let b of obj.balances) {
-      b.userId = obj.id
-      if (b.changed()) await b.save()
-    }
-  }
-
-  if (obj.subinsurances) {
-    for (let b of obj.subinsurances) {
-      // create ref later
-      b.insuranceId = obj.id
-      //l('saved subins', b)
-
-      if (b.changed()) await b.save()
-    }
-  }
-}

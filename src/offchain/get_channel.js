@@ -2,7 +2,7 @@
 // then derives a ton of info about current channel: (un)insured balances
 
 // TODO: periodically clone Insurance to Channel db to only deal with one db having all data
-module.exports = async (pubkey) => {
+module.exports = async function (pubkey) {
   // this critical section protects from simultaneous getChannel and doublesaved db records
   return await section(['get', pubkey], async () => {
     if (!me.pubkey) {
@@ -23,7 +23,7 @@ module.exports = async (pubkey) => {
     ch = {}
     ch.derived = {}
 
-    ch.last_used = ts() // for eviction from memory
+    ch.last_used = new Date() // for eviction from memory
 
     ch.d = await Channel.findOne({
       where: {

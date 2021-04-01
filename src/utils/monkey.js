@@ -1,4 +1,4 @@
-// Fairlayer runs e2e tests on itself,
+// runs e2e tests on itself,
 // different nodes acting like "monkeys" and doing different overlapping scenarios
 
 const payMonkey = async (on_server, counter = 1) => {
@@ -48,7 +48,7 @@ const payMonkey = async (on_server, counter = 1) => {
 let run = async () => {
   if (base_port > 8000) {
     // add first bank by default and open limit
-    //PK.usedBanks.push(1)
+    //Config.usedBanks.push(1)
 
     setTimeout(() => {}, 4000)
   }
@@ -56,7 +56,7 @@ let run = async () => {
   // only in monkey mode, not on end user node
 
   if (base_port != 8008) {
-    Periodical.schedule('broadcast', K.blocktime)
+    Periodical.schedule('broadcast', Config.blocktime)
   }
 
   if (base_port > 8000 && base_port < 8500) {
@@ -68,15 +68,15 @@ let run = async () => {
 
       await require('../internal_rpc/with_channel')({
         method: 'setLimits',
-        they_pubkey: K.banks[0].pubkey,
+        they_pubkey: Config.banks[0].pubkey,
         asset: 1,
-        acceptable_rebalance: K.acceptable_rebalance,
-        credit: K.credit,
+        acceptable_rebalance: Config.acceptable_rebalance,
+        credit: Config.credit,
       })
 
       await sleep(3000)
 
-      me.send(K.banks[0].pubkey, {
+      me.send(Config.banks[0].pubkey, {
         method: 'testnet',
         action: 'faucet',
         asset: 1,
@@ -88,7 +88,7 @@ let run = async () => {
 
       if (me.record && me.record.id == 2) {
         // withdraw 12.34 from bank and deposit 9.12 to 3 @ 1
-        let ch = await Channel.get(K.banks[0].pubkey)
+        let ch = await me.getChannel(Config.banks[0].pubkey)
 
         let withdrawn = await require('../internal_rpc/with_channel')({
           method: 'withdraw',
@@ -104,7 +104,7 @@ let run = async () => {
           amount: 1234,
         })
       }
-    }, K.blocktime)
+    }, Config.blocktime)
 
     setTimeout(() => {
       payMonkey(on_server)
@@ -163,7 +163,7 @@ let run = async () => {
       child_process.exec(`osascript -e 'display notification "${e2e}"'`)
 
       if (failed.length != 0) {
-        //fatal(0)
+        //this.fatal(0)
       }
 
       //

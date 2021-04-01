@@ -1,13 +1,13 @@
 // cache layer stores most commonly edited records:
 // channels, payments, users and insurances
-// also K.json is stored
+// also Config.json is stored
 module.exports = async (opts = {}) => {
   me.metrics.syncChanges.current++
 
-  if (ts() - me.last_sync_changes < 10000) {
+  if (new Date() - me.last_sync_changes < 10000) {
     return
   }
-  me.last_sync_changes = ts()
+  me.last_sync_changes = new Date()
 
   return await section('syncChanges', async () => {
     var all = []
@@ -23,7 +23,7 @@ module.exports = async (opts = {}) => {
             '../../' + datadir + '/onchain/k.json'
           ),
           K_dump,
-          function(err) {
+          function (err) {
             if (err) return console.log(err)
           }
         )
@@ -99,8 +99,8 @@ module.exports = async (opts = {}) => {
         }
         //ch.payments = left_payments
 
-        let evict = ch.last_used < ts() - 2000
-        //K.cache_timeout
+        let evict = ch.last_used < new Date() - 2000
+        //Config.cache_timeout
 
         await Promise.all(promises)
 

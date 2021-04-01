@@ -1,2 +1,0 @@
-rsync -q -rva --exclude=offchain data/* data$1
-node fair.js -p$1 --datadir=data$1

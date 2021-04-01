@@ -24,70 +24,7 @@ for(i=8001;i<8200;i++){
 
 const Sequelize = require('sequelize')
 
-const defineModels = (sequelize) => {
-  // Encapsulates relationship with counterparty: offdelta and last signatures
-  // TODO: seamlessly cloud backup it. If signatures are lost, money is lost
-
-  // we name our things "value", and counterparty's "they_value"
-  const Channel = sequelize.define(
-    'channel',
-    {
-      // between who and who
-      they_pubkey: Sequelize.BLOB,
-
-      // higher nonce is valid
-      dispute_nonce: {
-        type: Sequelize.INTEGER,
-        defaultValue: 0,
-      },
-
-      // used during rollbacks
-      rollback_nonce: {
-        type: Sequelize.INTEGER,
-        defaultValue: 0,
-      },
-
-      status: {
-        type: Sequelize.ENUM(
-          'main',
-          'sent',
-          'merge',
-          'disputed',
-          'CHEAT_dontack'
-        ),
-      },
-
-      pending: Sequelize.BLOB,
-
-      ack_requested_at: {
-        type: Sequelize.DATE,
-        defaultValue: null,
-      },
-
-      last_online: Sequelize.DATE,
-      withdrawal_requested_at: Sequelize.DATE,
-
-      sig: Sequelize.BLOB,
-      signed_state: Sequelize.BLOB,
-
-      // All the safety Byzantine checks start with cheat_
-      CHEAT_profitable_state: Sequelize.BLOB,
-      CHEAT_profitable_sig: Sequelize.BLOB,
-    },
-    {
-      indexes: [
-        {
-          fields: [
-            {
-              attribute: 'they_pubkey',
-              length: 32,
-            },
-          ],
-        },
-      ],
-    }
-  )
-
+/*
   // each separate offdelta per asset
   const Subchannel = sequelize.define(
     'subchannel',
@@ -161,6 +98,7 @@ const defineModels = (sequelize) => {
     }
   )
 
+
   const Payment = sequelize.define(
     'payment',
     {
@@ -179,9 +117,6 @@ const defineModels = (sequelize) => {
         type: Sequelize.BOOLEAN,
         defaultValue: false,
       }, // did merchant app process this deposit already
-
-      // streaming payments
-      lazy_until: Sequelize.DATE,
 
       // in outward it is inward amount - fee
       amount: Sequelize.INTEGER,
@@ -231,89 +166,12 @@ const defineModels = (sequelize) => {
     }
   )
 
-  // used primarily by validators and explorers to store historical blocks.
-  // Regular users don't have to store blocks ("pruning" mode)
-  const Block = sequelize.define(
-    'block',
-    {
-      hash: Sequelize.BLOB,
-      prev_hash: Sequelize.BLOB,
-
-      // sigs that authorize block
-      precommits: Sequelize.BLOB,
-      // at what round the block has been commited
-      round: Sequelize.INTEGER,
-
-      // header with merkle roots in it
-      header: Sequelize.BLOB,
-
-      // array of tx in block
-      ordered_tx_body: Sequelize.BLOB,
-
-      // happened events stored in JSON
-      meta: Sequelize.TEXT,
-      total_tx: Sequelize.INTEGER,
-    },
-    {
-      indexes: [
-        {
-          fields: [{attribute: 'prev_hash', length: 32}],
-        },
-      ],
-    }
-  )
-
-  // const OffchainOrder...
-
-  // a global log/history for current user
-  const Event = sequelize.define('event', {
-    type: Sequelize.STRING, //ENUM('received', 'sent', 'fee'),
-    desc: Sequelize.TEXT,
-    data: Sequelize.TEXT,
-
-    amount: Sequelize.INTEGER,
-    asset: Sequelize.INTEGER,
-    userId: Sequelize.INTEGER, // receiver/sender's id
-    blockId: Sequelize.INTEGER, // when it happened
-
-    processed: Sequelize.BOOLEAN,
-    public_invoice: Sequelize.BLOB,
-  })
-
-  // offchain order for instant trustless exchange
-  const OffOrder = sequelize.define('offorder', {
-    amount: Sequelize.INTEGER,
-    rate: Sequelize.FLOAT,
-    assetId: Sequelize.INTEGER,
-    buyAssetId: Sequelize.INTEGER,
-  })
-
-  let nonull = {foreignKey: {allowNull: false}, onDelete: 'CASCADE'}
-
-  Channel.hasMany(Subchannel, nonull)
-  Subchannel.belongsTo(Channel, nonull)
-
-  Channel.hasMany(Payment, nonull)
-  Payment.belongsTo(Channel, nonull)
-
-  Channel.prototype.isLeft = function () {
-    return Buffer.compare(me.pubkey, this.they_pubkey) == -1
-  }
-
   return {
     // actual channel
     Channel: Channel,
-    // subchannels (offdeltas for assets)
-    Subchannel: Subchannel,
-    // hashlocks for offdeltas
-    Payment: Payment,
-    // user-specific onchain events
-    Event: Event,
-
-    Block: Block,
-    OffOrder: OffOrder,
   }
 }
+*/
 
 const productionDBConfig = (datadir, dbtoken, dbpool) => {
   const logger = (str, time) => {
@@ -386,7 +244,7 @@ class OffchainDB {
     this.dbtoken = dbtoken
     this.pool = pool || 1
     // set to true when updated the schema
-    this.force = force || K.total_blocks <= 1
+    this.force = force
   }
 
   init() {
@@ -401,7 +259,65 @@ class OffchainDB {
     )
 
     this.db = new Sequelize(database, username, password, config)
-    this.models = defineModels(this.db)
+
+    this.Channel = this.db.define(
+      'channel',
+      {
+        // between who and who
+        they_pubkey: Sequelize.BLOB,
+
+        // higher nonce is valid
+        dispute_nonce: {
+          type: Sequelize.INTEGER,
+          defaultValue: 0,
+        },
+
+        // used during rollbacks
+        rollback_nonce: {
+          type: Sequelize.INTEGER,
+          defaultValue: 0,
+        },
+
+        status: {
+          type: Sequelize.ENUM(
+            'main',
+            'sent',
+            'merge',
+            'disputed',
+            'CHEAT_dontack'
+          ),
+        },
+
+        pending: Sequelize.BLOB,
+
+        ack_requested_at: {
+          type: Sequelize.DATE,
+          defaultValue: null,
+        },
+
+        last_online: Sequelize.DATE,
+        withdrawal_requested_at: Sequelize.DATE,
+
+        sig: Sequelize.BLOB,
+        signed_state: Sequelize.BLOB,
+
+        // All the safety Byzantine checks start with cheat_
+        CHEAT_profitable_state: Sequelize.BLOB,
+        CHEAT_profitable_sig: Sequelize.BLOB,
+      },
+      {
+        indexes: [
+          {
+            fields: [
+              {
+                attribute: 'they_pubkey',
+                length: 32,
+              },
+            ],
+          },
+        ],
+      }
+    )
 
     Object.freeze(this)
 

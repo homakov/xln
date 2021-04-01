@@ -2,7 +2,7 @@ const withdraw = require('../offchain/withdraw')
 
 module.exports = async (json) => {
   // perform a specific operation on given channel
-  let ch = await Channel.get(json.they_pubkey)
+  let ch = await me.getChannel(json.they_pubkey)
   if (!ch) {
     l('no channel')
     return

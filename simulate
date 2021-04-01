@@ -21,7 +21,7 @@ db=
 pm2_opts=--no-autorestart
 wallet_port=26678
 maxport=8008
-fair_cluster_args="--wallet-url=http://localhost:$wallet_port $db --color --monkey=$maxport"
+xln_cluster_args="--wallet-url=http://localhost:$wallet_port $db --color --monkey=$maxport"
 
 function pm2() {
   node_modules/.bin/pm2 "$@"
@@ -35,7 +35,7 @@ killall node 2>/dev/null || true
 rm -rf data*
 rm -rf isolate*
 
-if node fair.js --genesis=test $db $global | grep "Genesis done"; then
+if node xln.js --genesis=test $db $global | grep "Genesis done"; then
   echo "Generating with maxport $maxport"
 
   for i in $(seq 8001 $maxport); do
@@ -44,18 +44,18 @@ if node fair.js --genesis=test $db $global | grep "Genesis done"; then
 
   pm2 start $pm2_opts --name wallet yarn -- parcel serve wallet/index.html -p $wallet_port
 
-  fair_node_args="-p8433 --rebalance $global"
-  pm2 start $pm2_opts --name fair8433 fair.js -- $fair_cluster_args $fair_node_args
+  xln_node_args="-p8433 --rebalance $global"
+  pm2 start $pm2_opts --name xln8433 xln.js -- $xln_cluster_args $xln_node_args
 
   for i in $(seq 8001 $maxport); do
-    fair_node_args="-p$i --username=$i --pw=password --datadir=data$i $global"
+    xln_node_args="-p$i --username=$i --pw=password --datadir=data$i $global"
     if (( i < 8014 )); then
-      pm2 start $pm2_opts --name fair$i fair.js -- $fair_cluster_args $fair_node_args
+      pm2 start $pm2_opts --name xln$i xln.js -- $xln_cluster_args $xln_node_args
     else
-      pm2 start $pm2_opts --name fair$i fair.js -- $fair_cluster_args $fair_node_args -s
+      pm2 start $pm2_opts --name xln$i xln.js -- $xln_cluster_args $xln_node_args -s
     fi
   done
 
-  pm2 attach $(node -p "`pm2 id fair8433`[0]")  
+  pm2 attach $(node -p "`pm2 id xln8433`[0]")  
 fi
 

@@ -21,13 +21,13 @@ General recommendations:
 const withdraw = require('../offchain/withdraw')
 
 module.exports = async function () {
-  if (PK.pendingBatchHex || me.batch.length > 0) {
+  if (Config.pendingBatchHex || me.batch.length > 0) {
     return //l('There are pending tx')
   }
 
   let deltas = await Channel.findAll()
 
-  let current_rebalance_fee = K.min_gasprice * 200
+  let current_rebalance_fee = Config.min_gasprice * 200
 
   for (let asset = 1; asset <= 2; asset++) {
     let minRisk = 500
@@ -36,7 +36,7 @@ module.exports = async function () {
 
     for (let d of deltas) {
       await section(['use', d.they_pubkey], async () => {
-        let ch = await Channel.get(d.they_pubkey)
+        let ch = await me.getChannel(d.they_pubkey)
         let derived = ch.derived[asset]
         let subch = ch.d.subchannels.by('asset', asset)
 
@@ -63,8 +63,8 @@ module.exports = async function () {
             netSpenders.push(withdraw(ch, subch, derived.insured))
           } else if (subch.withdrawal_requested_at == null) {
             l('Delayed pull')
-            subch.withdrawal_requested_at = ts()
-          } else if (subch.withdrawal_requested_at + 600000 < ts()) {
+            subch.withdrawal_requested_at = new Date()
+          } else if (subch.withdrawal_requested_at + 600000 < new Date()) {
             l('User is offline for too long, or tried to cheat')
             me.batchAdd('dispute', await startDispute(ch))
           }
@@ -95,7 +95,7 @@ module.exports = async function () {
         ])
       } else {
         l('offline? dispute', subch)
-        subch.withdrawal_requested_at = ts()
+        subch.withdrawal_requested_at = new Date()
       }
     }
 
@@ -112,7 +112,7 @@ module.exports = async function () {
     )
 
     // dont let our FRD onchain balance go lower than that
-    let safety = asset == 1 ? K.bank_standalone_balance : 0
+    let safety = asset == 1 ? Config.bank_standalone_balance : 0
 
     // 4. now do our best to cover net receivers
     for (let ch of netReceivers) {

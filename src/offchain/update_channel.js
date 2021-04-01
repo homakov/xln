@@ -1,14 +1,14 @@
 // This method receives set of transitions by another party and applies it
 // banks normally pass forward payments, end users normally decode payloads and unlock hashlocks
-module.exports = async (
+module.exports = async function (
   pubkey,
   ackState,
   ackSig,
   transitions,
   theirSignedState
-) => {
-  let ch = await Channel.get(pubkey)
-  ch.last_used = ts()
+) {
+  let ch = await me.getChannel(pubkey)
+  ch.last_used = new Date()
 
   let all = []
 
@@ -81,12 +81,12 @@ module.exports = async (
       // we are in merge and yet we just received ackSig that doesnt ack latest state
       mismatch('Rollback cant rollback')
 
-      fatal('Rollback cant rollback')
+      this.fatal('Rollback cant rollback')
       return
     }
     if (transitions.length == 0) {
       mismatch('Empty invalid ack ' + ch.d.status)
-      fatal('Empty invalid ack ' + ch.d.status)
+      this.fatal('Empty invalid ack ' + ch.d.status)
       //me.send(ch.d.they_pubkey, parse(ch.d.pending))
 
       //me.flushChannel(ch, true)
@@ -131,7 +131,7 @@ module.exports = async (
 
       l('Deadlock')
 
-      fatal('Deadlock?!')
+      this.fatal('Deadlock?!')
       //await me.flushChannel(ch, true)
 
       return
@@ -194,14 +194,14 @@ module.exports = async (
 
       // things below can happen even when partner is honest
 
-      if (amount < K.min_amount || amount > derived.they_available) {
+      if (amount < Config.min_amount || amount > derived.they_available) {
         failure = 'AmountOverAvailable'
       }
       // these things CANT happen, partner is malicious so just ignore and break
       if (hash.length != 32) {
         failure = 'InvalidHashLength'
       }
-      if (derived.inwards.length >= K.max_hashlocks) {
+      if (derived.inwards.length >= Config.max_hashlocks) {
         failure = 'TooManyHashlocks'
       }
 
@@ -221,7 +221,7 @@ module.exports = async (
         failure = 'NotBankNotReceiver'
       }
 
-      let reveal_until = K.usable_blocks + K.hashlock_exp
+      let reveal_until = Config.usable_blocks + Config.hashlock_exp
       // safe ranges when we can accept hashlock exp
       if (exp < reveal_until - 2 || exp > reveal_until + 6) {
         loff(`error: exp is out of supported range: ${exp} vs ${reveal_until}`)
@@ -275,7 +275,7 @@ module.exports = async (
         let nextHop = fromHex(box_data.nextHop)
 
         //await section(['use', nextHop], async () => {
-        let dest_ch = await Channel.get(nextHop)
+        let dest_ch = await me.getChannel(nextHop)
 
         if (!dest_ch) {
           return l('invalid channel')
@@ -288,7 +288,7 @@ module.exports = async (
           is_inward: false,
 
           amount: outward_amount,
-          hash: bin(hash),
+          hash: Buffer.from(hash),
           exp: exp,
 
           asset: asset,
@@ -296,7 +296,7 @@ module.exports = async (
           // we pass nested unlocker for them
           unlocker: fromHex(box_data.unlocker),
 
-          inward_pubkey: bin(pubkey),
+          inward_pubkey: Buffer.from(pubkey),
         })
         dest_ch.payments.push(outward_hl)
 
@@ -337,7 +337,7 @@ module.exports = async (
       )
       if (!outward_hl) {
         l('No such hashlock ', hash, ch.payments)
-        fatal('no such hashlock')
+        this.fatal('no such hashlock')
         return
       }
 
@@ -375,7 +375,7 @@ module.exports = async (
       // if there's an inward channel for this, we are bank
       if (outward_hl.inward_pubkey) {
         //await section(['use', outward_hl.inward_pubkey], async () => {
-        var inward_ch = await Channel.get(outward_hl.inward_pubkey)
+        var inward_ch = await me.getChannel(outward_hl.inward_pubkey)
 
         if (inward_ch.d.status == 'disputed' && valid) {
           loff(
@@ -398,7 +398,7 @@ module.exports = async (
               ascii_state(inward_ch.state)
             )
             return
-            //fatal('Not found pull hl')
+            //this.fatal('Not found pull hl')
           }
           // pass same outcome down the chain
 

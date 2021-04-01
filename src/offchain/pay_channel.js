@@ -1,6 +1,6 @@
 const Router = require('../router')
 // short helper to create a Payment on some delta and flush the channel right after it
-module.exports = async (opts) => {
+module.exports = async function (opts) {
   return await section('pay', async () => {
     let secret = crypto.randomBytes(32)
     let hash = sha3(secret)
@@ -15,21 +15,7 @@ module.exports = async (opts) => {
 
     let addr = await parseAddress(opts.address)
 
-    if (!addr) {
-      l('Invalid address')
-      return 'Invalid address'
-    }
-
-    // use user supplied private message, otherwise generate random tag
-    // invoice inside the address takes priority
-    if (addr.invoice || opts.private_invoice) {
-      opts.private_invoice = concat(
-        Buffer.from([1]),
-        bin(addr.invoice ? addr.invoice : opts.private_invoice)
-      )
-    } else {
-      opts.private_invoice = concat(Buffer.from([2]), crypto.randomBytes(16))
-    }
+    opts.private_invoice = crypto.randomBytes(16)
 
     let amount = parseInt(opts.amount)
 
@@ -44,7 +30,7 @@ module.exports = async (opts) => {
         // by default choose the cheapest one
         let best = await Router.bestRoutes(opts.address, {
           amount: amount,
-          asset: asset
+          asset: asset,
         })
         if (!best[0]) {
           //l('No route found:', best, addr.banks)
@@ -69,8 +55,8 @@ module.exports = async (opts) => {
         secret: toHex(secret),
         private_invoice: toHex(opts.private_invoice),
 
-        ts: ts(),
-        source_address: opts.provideSource ? me.getAddress() : null
+        ts: new Date(),
+        source_address: opts.provideSource ? me.getAddress() : null,
       },
       addr.box_pubkey
     )
@@ -80,7 +66,7 @@ module.exports = async (opts) => {
     // 2. encrypt msg for each hop in reverse order
     let reversed = opts.chosenRoute.reverse()
     for (let hop of reversed) {
-      let bank = K.banks.find((h) => h.id == hop)
+      let bank = Config.banks.find((h) => h.id == hop)
 
       amount = beforeFee(amount, bank)
 
@@ -90,7 +76,7 @@ module.exports = async (opts) => {
           amount: amount,
           nextHop: nextHop,
 
-          unlocker: onion
+          unlocker: onion,
         },
         fromHex(bank.box_pubkey)
       )
@@ -100,7 +86,7 @@ module.exports = async (opts) => {
 
     // 3. now nextHop is equal our first hop, and amount includes all fees
     //await section(['use', nextHop], async () => {
-    let ch = await Channel.get(nextHop)
+    let ch = await me.getChannel(nextHop)
     if (!ch) {
       l('No channel to ', nextHop, asset)
       return 'No channel to '
@@ -123,11 +109,11 @@ module.exports = async (opts) => {
       react({alert: `Not enough funds ${available}`})
 
       return 'No available'
-    } else if (amount > K.max_amount) {
-      react({alert: `Maximum payment is $${commy(K.max_amount)}`})
+    } else if (amount > Config.max_amount) {
+      react({alert: `Maximum payment is $${commy(Config.max_amount)}`})
       return 'out of range'
-    } else if (amount < K.min_amount) {
-      react({alert: `Minimum payment is $${commy(K.min_amount)}`})
+    } else if (amount < Config.min_amount) {
+      react({alert: `Minimum payment is $${commy(Config.min_amount)}`})
       return 'out of range'
     }
 
@@ -139,14 +125,14 @@ module.exports = async (opts) => {
       is_inward: false,
       asset: asset,
 
-      lazy_until: opts.lazy ? ts() + 30000 : null,
+      lazy_until: opts.lazy ? new Date() + 30000 : null,
 
       amount: amount,
-      hash: bin(hash),
+      hash: Buffer.from(hash),
 
       unlocker: onion,
       destination_address: addr.address,
-      private_invoice: opts.private_invoice
+      private_invoice: opts.private_invoice,
     })
 
     await outward.save()

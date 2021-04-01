@@ -9,8 +9,7 @@ module.exports = async function (ch, subch, amount) {
 
   me.send(ch.d.they_pubkey, {
     method: 'requestWithdrawal',
-    amount: amount,
-    asset: subch.asset,
+    pairs: [[0, 100]],
   })
 
   return new Promise(async (resolve) => {

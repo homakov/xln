@@ -2,7 +2,7 @@ module.exports = async (pubkey, json, ws) => {
   //todo: ensure no conflicts happen if two parties withdraw from each other at the same time
 
   await section(['use', pubkey], async () => {
-    let ch = await Channel.get(pubkey)
+    let ch = await me.getChannel(pubkey)
 
     if (json.method == 'setLimits') {
       let subch = ch.d.subchannels.by('asset', json.asset)
@@ -169,7 +169,7 @@ module.exports = async (pubkey, json, ws) => {
           'Demo',
           "It's free money!",
           '\'"><',
-        ].randomElement()
+        ][3]
 
         let pay = {
           address: json.address,
@@ -183,7 +183,7 @@ module.exports = async (pubkey, json, ws) => {
     }
   })
 
-  if (json.method == 'update') {
+  if (json.method == 'updateChannel') {
     //l(msg.length, ' from ', trim(pubkey), toHex(sha3(msg)))
 
     // ackSig defines the sig of last known state between two parties.

@@ -3,25 +3,24 @@
 // that's why we must go to blockchain asap to reveal the secret to hashlock
 module.exports = async () => {
   //l('Checking who has not ack')
-  if (PK.pendingBatchHex) return l('Pending batch')
+  if (Config.pendingBatchHex) return l('Pending batch')
 
   var deltas = await Channel.findAll()
 
   for (let d of deltas) {
     await section(['use', d.they_pubkey], async () => {
-      let ch = await Channel.get(d.they_pubkey)
-      //cache.ch[key]
+      let ch = await me.getChannel(d.they_pubkey)
       if (!ch) {
         return
       }
 
-      let missed_ack = ch.d.ack_requested_at ? ts() - ch.d.ack_requested_at : 0
+      let missed_ack = ch.d.ack_requested_at ? new Date() - ch.d.ack_requested_at : 0
 
       if (
         // already disputed
         ch.d.status == 'disputed' ||
         // they still have some time
-        missed_ack < K.dispute_if_no_ack
+        missed_ack < Config.dispute_if_no_ack
       ) {
         return
       }
@@ -44,7 +43,9 @@ module.exports = async () => {
           if (
             !unlocked ||
             unlocked.delete_at <
-              K.usable_blocks + K.dispute_delay_for_users + K.hashlock_exp // when we expect resolution of our dispute
+              Config.usable_blocks +
+                Config.dispute_delay_for_users +
+                Config.hashlock_exp // when we expect resolution of our dispute
           ) {
             to_reveal.push(inward.outcome)
           } else {

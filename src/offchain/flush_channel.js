@@ -15,12 +15,12 @@ during merge: no transitions can be applied, otherwise deadlock could happen.
 Always flush opportunistically, unless you are acking your direct partner who sent tx to you.
 */
 
-module.exports = async (pubkey, opportunistic, rawJSON) => {
+module.exports = async function(pubkey, opportunistic, rawJSON) {
   await section(['use', pubkey], async () => {
     if (trace) l(`Started Flush ${trim(pubkey)} ${opportunistic}`)
 
-    let ch = await Channel.get(pubkey)
-    ch.last_used = ts()
+    let ch = await me.getChannel(pubkey)
+    ch.last_used = new Date()
 
     // an array of partners we need to ack or flush changes at the end of processing
     var flushable = []
@@ -45,7 +45,7 @@ module.exports = async (pubkey, opportunistic, rawJSON) => {
           await t.save()
 
           if (t.inward_pubkey) {
-            inward_ch = await Channel.get(t.inward_pubkey)
+            inward_ch = await me.getChannel(t.inward_pubkey)
 
             let to_fail = inward_ch.payments.find((p) => p.hash.equals(t.hash))
             to_fail.type = 'del'
@@ -64,7 +64,7 @@ module.exports = async (pubkey, opportunistic, rawJSON) => {
     if (ch.d.status == 'sent') {
       if (trace) l(`End flush ${trim(pubkey)}, in sent`)
 
-      if (ch.d.ack_requested_at < ts() - 4000) {
+      if (ch.d.ack_requested_at < new Date() - 4000) {
         //me.send(ch.d.they_pubkey, 'update', ch.d.pending)
       }
       return
@@ -118,7 +118,7 @@ module.exports = async (pubkey, opportunistic, rawJSON) => {
         } else if (t.type == 'add' || t.type == 'addrisk') {
           if (
             t.lazy_until &&
-            t.lazy_until > ts() &&
+            t.lazy_until > new Date() &&
             t.amount > derived.uninsured
           ) {
             l('Still lazy, wait')
@@ -126,10 +126,10 @@ module.exports = async (pubkey, opportunistic, rawJSON) => {
           }
 
           if (
-            t.amount < K.min_amount ||
-            t.amount > K.max_amount ||
+            t.amount < Config.min_amount ||
+            t.amount > Config.max_amount ||
             t.amount > derived.available ||
-            derived.outwards.length >= K.max_hashlocks
+            derived.outwards.length >= Config.max_hashlocks
           ) {
             if (trace)
               loff(
@@ -153,7 +153,7 @@ module.exports = async (pubkey, opportunistic, rawJSON) => {
             await t.save()
 
             if (t.inward_pubkey) {
-              var inward_ch = await Channel.get(t.inward_pubkey)
+              var inward_ch = await me.getChannel(t.inward_pubkey)
               var pull_hl = inward_ch.derived[t.asset].inwards.find((hl) =>
                 hl.hash.equals(t.hash)
               )
@@ -171,13 +171,13 @@ module.exports = async (pubkey, opportunistic, rawJSON) => {
 
             continue
           }
-          if (derived.outwards.length >= K.max_hashlocks) {
+          if (derived.outwards.length >= Config.max_hashlocks) {
             loff('error Cannot set so many hashlocks now, try later')
             //continue
           }
 
           // set exp right before flushing to keep it fresh
-          t.exp = K.usable_blocks + K.hashlock_exp
+          t.exp = Config.usable_blocks + Config.hashlock_exp
 
           args = [t.asset, t.amount, t.hash, t.exp, t.unlocker]
         }
@@ -190,7 +190,7 @@ module.exports = async (pubkey, opportunistic, rawJSON) => {
         await t.save()
 
         if (t.status != 'sent') {
-          fatal('Gotcha error! ', t)
+          this.fatal('Gotcha error! ', t)
         }
 
         // increment nonce after each transition
@@ -226,7 +226,7 @@ module.exports = async (pubkey, opportunistic, rawJSON) => {
 
     // transitions: method, args, sig, new state
     let data = {
-      method: 'update',
+      method: 'updateChannel',
 
       ackState: ackState,
       ackSig: ackSig,
@@ -242,7 +242,7 @@ module.exports = async (pubkey, opportunistic, rawJSON) => {
 
     if (transitions.length > 0) {
       // if there were any transitions, we need an ack on top
-      ch.d.ack_requested_at = ts()
+      ch.d.ack_requested_at = new Date()
       //l('Set ack request ', ch.d.ack_requested_at, trim(pubkey))
       //ch.d.pending = stringify(data)
       ch.d.status = 'sent'

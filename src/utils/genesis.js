@@ -1,50 +1,6 @@
 // this file is only used during genesis to set initial K params and create first validators
 const derive = require('./derive')
 
-const createValidator = async (username, pw, loc, website) => {
-  l(`${username} : ${pw} at ${loc}`)
-
-  const seed = await derive(username, pw)
-  const me = new Me()
-  await me.init(username, seed)
-
-  const user = await User.create({
-    pubkey: me.pubkey,
-    username: username,
-  })
-
-  await user.createBalance({
-    asset: 1,
-    balance: 1000000000,
-  })
-  await user.createBalance({
-    asset: 2,
-    balance: 10000000000,
-  })
-
-  const validator = {
-    id: user.id,
-    username: username,
-    location: loc,
-    website: website,
-    pubkey: toHex(me.pubkey),
-    box_pubkey: toHex(bin(me.box.publicKey)),
-    block_pubkey: me.block_pubkey,
-    missed_blocks: [],
-    shares: 0,
-  }
-
-  return [validator, seed]
-}
-
-const writeGenesisOnchainConfig = async (k, datadir) => {
-  await promise_writeFile('./' + datadir + '/onchain/k.json', stringify(k))
-}
-
-const writeGenesisOffchainConfig = async (pk, datadir) => {
-  await promise_writeFile('./' + datadir + '/offchain/pk.json', stringify(pk))
-}
-
 module.exports = async (datadir) => {
   l('Start genesis')
 
@@ -55,37 +11,9 @@ module.exports = async (datadir) => {
   const K = {
     // Things that are different in testnet vs mainnet
     network_name: 'testnet',
-    blocksize: 20000,
-    blocktime: 5 * sec,
-    step_latency: 1 * sec, // how long is each consensus step: propose, prevote, precommit, await is the rest
-    gossip_delay: 0.5 * sec, // anti clock skew, give others time to change state
-
-    created_at: ts(),
 
     usable_blocks: 0, // blocks that have some extra space (to ensure disputes add on-time)
     total_blocks: 0, // total number of blocks full or not
-
-    total_tx: 0,
-    total_bytes: 0,
-
-    total_tx_bytes: 0,
-
-    voting_period: 10,
-
-    current_db_hash: '',
-
-    blocks_since_last_snapshot: 999999999, // force to do a snapshot on first block
-    last_snapshot_height: 0,
-
-    snapshot_after_blocks: 100, // something like every hour is good enough
-    snapshots_taken: 0,
-    proposals_created: 0,
-
-    // cents per 100 bytes of tx
-    min_gasprice: 1,
-
-    // manually priced actions to prevent spam
-    account_creation_fee: 100,
 
     standalone_balance: 1000, // keep $10 on your own balance for unexpected onchain fees
     bank_standalone_balance: 100000, // bank has higher operational costs
@@ -142,103 +70,24 @@ module.exports = async (datadir) => {
   // Defines global Byzantine tolerance parameter
   // 0 would require 1 validator, 1 - 4, 2 - 7.
   // Long term goal is 3333 tolerance with 10,000 validators
-  K.tolerance = 1
+  Config.tolerance = 1
 
-  K.total_shares = K.tolerance * 3 + 1
+  Config.total_shares = Config.tolerance * 3 + 1
 
-  K.majority = K.total_shares - K.tolerance
-
-  const local = !argv['prod-server']
-
-  const base_rpc = local ? 'ws://' + localhost : 'ws://188.120.244.199'
-  const base_web = local ? 'http://' + localhost : 'http://fairlayer.com'
-
-  // validators provide services: 1) build blocks 2) banks 3) watchers 4) storage of vaults
-  l(note('New validators:'))
-
-  // create bank
-  const [bankValidator, bankSeed] = await createValidator(
-    'root',
-    toHex(crypto.randomBytes(16)),
-    `${base_rpc}:8100`,
-    local ? 'http://' + localhost + ':8433' : 'http://fairlayer.com'
-  )
-  K.validators.push(bankValidator)
-
-  // create other validators
-  for (const i of [8001, 8002, 8003]) {
-    const [validator, _] = await createValidator(
-      i.toString(),
-      'password',
-      `${base_rpc}:${i + 100}`,
-      `${base_web}:${i}`
-    )
-
-    const left =
-      Buffer.compare(
-        fromHex(validator.pubkey),
-        fromHex(bankValidator.pubkey)
-      ) == -1
-
-    K.validators.push(validator)
-
-    let ins = await Insurance.create({
-      leftId: left ? validator.id : 1,
-      rightId: left ? 1 : validator.id,
-    })
-
-    ins.createSubinsurance({
-      asset: 1,
-      balance: 1000000,
-      ondelta: left ? 1000000 : 0,
-    })
-  }
-
-  // distribute shares
-  K.validators[0].shares = 1
-  K.validators[0].platform = 'Moscow'
-
-  K.validators[1].shares = 1
-  K.validators[1].platform = 'London'
-
-  K.validators[2].shares = 1
-  K.validators[2].platform = 'Tokyo'
-
-  K.validators[3].shares = 1
-  K.validators[3].platform = 'New York'
-
-  // set bank
-  K.banks.push({
-    id: K.validators[0].id,
-    location: K.validators[0].location,
-    pubkey: K.validators[0].pubkey,
-    box_pubkey: K.validators[0].box_pubkey,
-
-    website: 'http://fairlayer.com',
-    // basis points
-    fee_bps: 10,
-    createdAt: ts(),
-
-    handle: 'Firstbank',
-  })
-
-  // list of https://en.wikipedia.org/wiki/Nostro_and_vostro_accounts
-  K.routes = []
-
-  global.K = K
-
+  
+  
   const Router = require('../router')
 
   // testing stubs to check dijkstra
   if (argv.generate_airports) {
     let addBank = (data) => {
-      data.id = K.banks.length + 1000
+      data.id = Config.banks.length + 1000
       data.fee_bps = Math.round(Math.random() * 500)
 
       data.pubkey = crypto.randomBytes(32)
-      data.createdAt = ts()
+      data.createdAt = new Date()
       data.location = 'ws://127.0.0.1:8100'
-      K.banks.push(data)
+      Config.banks.push(data)
       return data
     }
 
@@ -254,8 +103,8 @@ module.exports = async (datadir) => {
       if (parts[7] != '0') continue
 
       //from 2 to 4
-      let from = K.banks.find((h) => h.handle == parts[2])
-      let to = K.banks.find((h) => h.handle == parts[4])
+      let from = Config.banks.find((h) => h.handle == parts[2])
+      let to = Config.banks.find((h) => h.handle == parts[4])
 
       // if not exists, create stub-banks
       if (!from) from = addBank({handle: parts[2]})
@@ -263,44 +112,23 @@ module.exports = async (datadir) => {
 
       if (Router.getRouteIndex(from.id, to.id) == -1) {
         // only unique routes are saved
-        K.routes.push([from.id, to.id])
+        Config.routes.push([from.id, to.id])
       }
     }
   }
 
-  await Asset.create({
-    ticker: 'FRD',
-    name: 'Token',
-    desc: 'FRD',
-    issuerId: 1,
-    total_supply: 1000000000,
-  })
-
-  await Asset.create({
-    ticker: 'FRB',
-    name: 'Fair bet',
-    desc: 'Balance',
-    issuerId: 1,
-    total_supply: 1000000000,
-  })
-
   // private config
-  const PK = {
+  const Config = {
     username: 'root',
     seed: bankSeed.toString('hex'),
     auth_code: toHex(crypto.randomBytes(32)),
 
     pendingBatchHex: null,
-
-    usedBanks: [1],
-    usedAssets: [1, 2],
   }
 
-  await writeGenesisOnchainConfig(K, datadir)
-  await writeGenesisOffchainConfig(PK, datadir)
-
-  l(
-    `Genesis done (${datadir}). Banks ${K.banks.length}, routes ${K.routes.length}, quitting`
+  await fs.writeFileSync(
+    './' + datadir + '/config.json',
+    JSON.stringify(Config)
   )
 
   // not graceful to not trigger hooks
