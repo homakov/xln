@@ -191,8 +191,8 @@ module.exports = async (me) => {
   }:${me.base_port}/#auth_code=${me.Config.auth_code}`
   console.log(`Open ${url} in your browser`)
 
-  // opn doesn't work in SSH console
-  if (!me.argv.silent && !me.argv.s) {
+  // --s for silent mode and no opn
+  if (!me.argv.s) {
     opn(url)
   }
 

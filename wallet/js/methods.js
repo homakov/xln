@@ -8,11 +8,7 @@ module.exports = {
     pay()
   },
 
-  pubkeyToUser: (pubkey) => {
-    let h = app.K.banks.find((h) => h.pubkey == pubkey)
-    return h ? h.handle : app.trim(pubkey)
-  },
-
+  
   resolveDemo: (democh) => {
     // normalize
     for (let arg of [
@@ -90,25 +86,22 @@ module.exports = {
   },
 
   updateRoutes: () => {
-    if (app.outward.address.length < 4) return
+    if (app.newPayment.address.length == '') return
 
     // address or amount was changed - recalculate best offered routes
     app.call('getRoutes', {
-      address: app.outward.address,
-      amount: app.outward.amount,
-      asset: app.outward.asset,
+      address: app.newPayment.address,
+      amount: app.newPayment.amount,
+      assetId: app.newPayment.assetId,
     })
   },
 
   routeToText: (r) => {
+    if (r.length == 0) return '[direct]'
     let info = []
 
     for (let hop of r[1]) {
-      let bank = app.K.banks.find((h) => h.id == hop)
-      if (bank) {
-        //(${app.bpsToPercent(bank.fee_bps)})
-        info.push(`${app.toUser(bank.id)}`)
-      }
+      info.push(`${app.addressToName(hop)}`)
     }
 
     return info.join(' → ')
@@ -179,7 +172,7 @@ module.exports = {
   },
 
   addExternalDeposit: () => {
-    let d = app.outward
+    let d = app.newPayment
     app.call('externalDeposit', {
       asset: d.asset,
       amount: app.uncommy(d.amount),
@@ -195,7 +188,7 @@ module.exports = {
       address: '',
       amount: '',
       asset: 1,
-      type: app.outward.type,
+      type: app.newPayment.type,
       bank: -1,
     }
   },
@@ -226,15 +219,12 @@ module.exports = {
     return asset ? asset.ticker : 'N/A'
   },
 
-  toUser: (userId) => {
-    if (!userId) return userId
-    // returns either bank name or just id
-    // todo: twitter-style tooltips with info on the user
-    if (userId.length > 20) return app.trim(userId)
-
-    let h = app.K.banks.find((h) => h.id == userId)
-    //`<span class="badge badge-success">${h.handle}</span>`
-    return h ? h.handle : userId
+  addressToName: (address) => {
+    // returns verified hub or token name
+    const t = {
+      '0x627306090abaB3A6e1400e9345bC60c78a8BEf57': 'Hub1'
+    }
+    return t[address] ? t[address] : address
   },
 
   getAsset: (asset, user) => {
@@ -323,8 +313,8 @@ module.exports = {
     let c = app.commy
     let o = `<tr>
       <td>Dispute resolved:</td>
-      <td>${app.toUser(ins.leftId)}</td>
-      <td>${app.toUser(ins.rightId)}</td>
+      <td>${app.addressToName(ins.leftId)}</td>
+      <td>${app.addressToName(ins.rightId)}</td>
     </tr>
     `
 
@@ -456,11 +446,11 @@ module.exports = {
           if (tx[0] == 'withdraw') {
             r += `<span class="badge badge-danger">${app.commy(
               o[0]
-            )} from ${app.toUser(o[1])}</span>&nbsp;`
+            )} from ${app.addressToName(o[1])}</span>&nbsp;`
           } else {
             r += `<span class="badge badge-success">${app.commy(
               o[0]
-            )} to ${app.toUser(o[1])}</span>&nbsp;`
+            )} to ${app.addressToName(o[1])}</span>&nbsp;`
           }
         }
       } else {

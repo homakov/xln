@@ -1,53 +1,62 @@
 import { getAllJSDocTags } from "typescript"
 
-//import Web3 from 'web3'
-const Web3 = require('web3')
+//import * as minimist from 'minimist'
+import minimist = require('minimist')
 
 import crypto = require('crypto')
 import fs = require('fs')
 import {Me} from './me' //= require('./me')
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const me:any = new Me()
- 
-
-me.web3 = new Web3('http://127.0.0.1:8545')
-console.log(me.web3.givenProvider)
 
 
 
-//const SegfaultHandler = require('segfault-handler')
-//SegfaultHandler.registerHandler('crash.log')
-
-me.argv = require('minimist')(process.argv.slice(2), {
-  string: ['username', 'password'],
-})
-
-me.datadir = me.argv.datadir ? me.argv.datadir : 'data'
-me.base_port = me.argv.p ? parseInt(me.argv.p) : 8001
-me.on_server = !!me.argv['prod-server']
-
-process.title = 'XLN ' + me.base_port
 
 
-//let git_commit = child_process.execSync('cat HEAD').toString().trim()
 
-const startDaemon = async () => {
+
+async function main() {
+
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const me:any = new Me()
+
+
+  //me.web3 = new Web3('http://127.0.0.1:8545')
+  //console.log(me.web3.givenProvider)
+
+  me.argv = minimist(process.argv.slice(2), {
+    string: ['username', 'password'],
+  })
+
+  me.base_port = me.argv.p ? parseInt(me.argv.p) : 8001
+  me.datadir = me.base_port == 8001 ? 'data' : 'data' + me.base_port
+  
+  me.on_server = !!me.argv['prod-server']
+  process.title = 'XLN ' + me.base_port
+
+
+
+
+
   if (!fs.existsSync('./' + me.datadir)) {
     console.log('Creating ' + me.datadir)
-    fs.mkdirSync('./' + me.datadir)
+    fs.mkdirSync('./' + me.datadir,'0777')
   }
 
   const file = './' + me.datadir + '/config.json'
   console.log('Loading ' + file)
 
   if (fs.existsSync(file)) {
+    console.log("reading config")
     me.Config = JSON.parse(fs.readFileSync(file).toString())
   } else {
     me.Config = {
       auth_code: crypto.randomBytes(32).toString('hex'),
       pendingBatchHex: null,
     }
+    //fs.mkdirSync('./' + me.datadir+'/sdf')
+
+    console.log("Writing config")
     fs.writeFileSync(file, JSON.stringify(me.Config))
   }
 
@@ -66,6 +75,12 @@ const startDaemon = async () => {
 
   const repl = require('repl').start('')
   repl.context.me = me
+  repl.context.t = this
+
+
 }
 
-startDaemon()
+main().catch((e) => {
+  console.error(e)
+  process.exit(1)
+})

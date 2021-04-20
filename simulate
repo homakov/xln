@@ -14,48 +14,37 @@ fi
 git rev-parse HEAD > HEAD
 
 
-
-db=
-#--db=postgres:postgres:
-#--db=mysql:root:123123 
 pm2_opts=--no-autorestart
 wallet_port=26678
-maxport=8008
-xln_cluster_args="--wallet-url=http://localhost:$wallet_port $db --color --monkey=$maxport"
-
-function pm2() {
-  node_modules/.bin/pm2 "$@"
-}
+maxport=8002
+xln_cluster_args="ts-node src/xln --wallet-url=http://localhost:$wallet_port --color --mmonkey=$maxport"
 
 # Clean up, stop all demoapps and nodes
-pm2 flush
-pm2 delete all || true
+npx pm2 flush
+npx pm2 delete all || true
 killall node 2>/dev/null || true
 
-rm -rf data*
-rm -rf isolate*
+#rm -rf data*
+#rm -rf isolate*
 
-if node xln.js --genesis=test $db $global | grep "Genesis done"; then
-  echo "Generating with maxport $maxport"
+echo "Generating with maxport $maxport"
 
-  for i in $(seq 8001 $maxport); do
-    rsync -q -rva --exclude=offchain data/* data$i
-  done
 
-  pm2 start $pm2_opts --name wallet yarn -- parcel serve wallet/index.html -p $wallet_port
 
-  xln_node_args="-p8433 --rebalance $global"
-  pm2 start $pm2_opts --name xln8433 xln.js -- $xln_cluster_args $xln_node_args
+npx pm2 start $pm2_opts --name wallet yarn -- parcel serve wallet/index.html -p $wallet_port
 
-  for i in $(seq 8001 $maxport); do
-    xln_node_args="-p$i --username=$i --pw=password --datadir=data$i $global"
-    if (( i < 8014 )); then
-      pm2 start $pm2_opts --name xln$i xln.js -- $xln_cluster_args $xln_node_args
-    else
-      pm2 start $pm2_opts --name xln$i xln.js -- $xln_cluster_args $xln_node_args -s
-    fi
-  done
+xln_node_args="-p8433 --rebalance $global"
+npx pm2 start $pm2_opts --name xln8433 npx -- $xln_cluster_args $xln_node_args
 
-  pm2 attach $(node -p "`pm2 id xln8433`[0]")  
-fi
+for i in $(seq 8001 $maxport); do
+  xln_node_args="-p$i $global"
+  #if (( i < 8014 )); then
+    #mkdir data$i
+    npx pm2 start $pm2_opts --name xln$i npx -- $xln_cluster_args $xln_node_args
+  #else
+  #  npx pm2 start $pm2_opts --name xln$i npx -- $xln_cluster_args $xln_node_args -s
+  #fi
+done
+
+npx pm2 attach $(node -p "`pm2 id xln8433`[0]")  
 

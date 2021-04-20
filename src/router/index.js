@@ -1,7 +1,6 @@
 const Router = {
   max_hops: 10,
   // don't offer routes that cost more than 10% in total
-  // We don't want to deliberately burn money, right?
   max_fee: 0.9,
 
   getRouteIndex: function (from, to) {
@@ -63,7 +62,6 @@ const Router = {
       // for faucet: return direct route as only option
       return [[1, []]]
     }
-    // TODO: atomic multipath
 
     // where do we have enough amount in available
     for (let candidate of Config.usedBanks) {

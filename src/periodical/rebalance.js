@@ -57,7 +57,7 @@ module.exports = async function () {
           //l('Adding output for our promise ', ch.d.they_pubkey)
           netReceivers.push(ch)
         } else if (derived.insured >= minRisk) {
-          if (me.sockets[ch.d.they_pubkey]) {
+          if (me.websockets[ch.d.they_pubkey]) {
             // they either get added in this rebalance or next one
             //l('Request withdraw: ', derived)
             netSpenders.push(withdraw(ch, subch, derived.insured))

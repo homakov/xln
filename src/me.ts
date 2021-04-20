@@ -12,70 +12,71 @@ const fs = require('fs')
 const os = require('os')
 const ws = require('ws')
 const querystring = require('querystring')
+import crypto = require('crypto')
+
+import { utils, ethers } from 'ethers'
+import { XLN__factory, TokenA__factory } from '../types/ethers-contracts'
+
+
+const RPC_HOST = 'http://127.0.0.1:8545'
+
+
+const abi:string = fs.readFileSync('../AAAxln/build/contracts/XLN.json').toString()
+const XLN_ADDRESS = JSON.parse(abi).networks[5777].address
 
 // scrypt = require('scrypt') // require('./scrypt_'+os.platform())
 const base58 = require('base-x')(
   '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 )
  
-/*
-nacl = require('../../lib/nacl')
-
-encrypt_box = nacl.box
-open_box = nacl.box.open
-
-// more highlevel wrappers that operate purely with JSON
-encrypt_box_json = (box_data, target_pubkey) => {
-  // we don't care about authentication of box, but nacl requires that
-  let throwaway = nacl.box.keyPair()
-
-  let unlocker_nonce = crypto.randomBytes(24)
-
-  let box = encrypt_box(
-    bin(JSON.stringify(box_data)),
-    unlocker_nonce,
-    target_pubkey,
-    throwaway.secretKey
-  )
-  return r([bin(box), unlocker_nonce, bin(throwaway.publicKey)])
-}
-
-open_box_json = (box) => {
-  let unlocker = r(box)
-  let raw_box = open_box(
-    unlocker[0],
-    unlocker[1],
-    unlocker[2],
-    this.box.secretKey
-  )
-  if (raw_box == null) {
-    return false
-  } else {
-    return parse(bin(raw_box).toString())
-  }
-}
- */
+const nacl = require('../lib/nacl')
 
 export class Me {
-  account: unknown
-  web3: any
+  signer: any
+  partners: any
 
+  provider: any
+  L1: any
+
+  MessageType = {
+    JSON: 0,
+    CooperativeProof: 1,
+    WithdrawProof: 2,
+    DisputeProof: 3,
+  }
+
+  sharedState: any = {}
+
+  channels: Array<any>
+  syncedChannels: Array<any>
+
+
+  
   record: unknown
   datadir: string
   argv: unknown
   external_http_server: http.Server
   external_wss: any
 
+  coordinator: string
+
   on_server: boolean
 
+  boxPair: any
 
+
+  ethers = ethers
 
   Config = {}
   Channels = {}
+  Orders = {}
 
   batch = []
 
-  sockets = {}
+  websockets = {}
+  websocketCallbacks = {}
+  Profiles = {}
+
   browsers = []
 
   busyPorts = [] // for cloud demos
@@ -113,17 +114,35 @@ export class Me {
     ecverify: this.getMetric(),
   }
 
+  
 
-  async start(seed) {
-    console.log('Seed ', seed)
 
-    this.account = this.web3.eth.accounts.privateKeyToAccount(seed)
-    console.log('Account ', this.account)
+  async start(seed: string):Promise<void> {
 
-    /*
-    this.block_keypair = nacl.sign.keyPair.fromSeed(sha3('block' + this.seed))
-    this.box = nacl.box.keyPair.fromSecretKey(this.seed)
-    */
+    this.signer = new this.ethers.Wallet(seed, new this.ethers.providers.JsonRpcProvider(RPC_HOST))
+    this.L1 = XLN__factory.connect(XLN_ADDRESS, this.signer)
+
+
+
+    const sk = Buffer.from(seed.substr(2), 'hex')
+
+    this.boxPair = nacl.box.keyPair.fromSecretKey(sk)
+
+    this.sharedState.address = this.signer.address
+    
+    await this.syncL1()
+
+    setInterval(()=>{this.syncL1()}, 2000)
+
+    // are we a hub?
+    const myHub = this.sharedState.hubs.find(h=>h.addr==this.signer.address)
+    if (myHub) {
+      this.startExternalRPC(parseInt(myHub.uri.split(':')[2]))
+    }
+
+    this.broadcastProfile()
+
+
 
     await fs.writeFileSync(
       this.datadir + '/config.json',
@@ -131,16 +150,45 @@ export class Me {
     )
   }
 
+  async syncL1() {
+    const partners = Object.keys(this.Channels);
+    //['0xf17f52151EbEF6C7334FAD080c5704D77216b732','0x821aEa9a577a9b44299B9c15c88cf3087F3b5544'];
+    //Object.keys(Channels)
 
-  async startExternalRPC(advertized_url) {
-    if (!advertized_url) {
-      return console.log('Cannot start rpc on ', advertized_url)
-    }
+    [
+      this.sharedState.assets, 
+      this.sharedState.hubs, 
+      this.sharedState.EOA_balance,
+      this.sharedState.currentUser,
+      this.syncedChannels
+    ] = await Promise.all([
+      this.L1.getAllAssets(),
+      this.L1.getAllHubs(), 
+      this.signer.getBalance(),
+      this.L1.getUser(this.signer.address), 
 
+      this.L1.getChannels(this.signer.address, partners)
+    ])
+
+    this.sharedState.reserves = this.sharedState.currentUser.assets.map(r=>r.reserve.toString())
+
+    //console.log('current', this.sharedState.currentUser.assets)
+    //this.sharedState.currentUser[0]
+
+    this.sharedState.EOA_balance = utils.formatEther(this.sharedState.EOA_balance)
+
+    this.coordinator = this.sharedState.hubs[1].addr
+
+  }
+
+
+  async startExternalRPC(usePort: number) {
+
+    
+    
     if (this.external_http_server) {
       return console.log('Already have external server started')
     }
-    // there's 2nd dedicated websocket server for validator/bank commands
 
     this.external_http_server = http.createServer(
       async (req, res) => {
@@ -149,33 +197,28 @@ export class Me {
         if (path.startsWith('/faucet')) {
           res.setHeader('Access-Control-Allow-Origin', '*')
 
-          let args = querystring.parse(query)
+          const args = querystring.parse(query)
           console.log('faucet ', args)
 
-          let status = await this.payChannel({
+          const status = await this.payChannel({
             address: args.address,
             amount: parseInt(args.amount),
             asset: parseInt(args.asset),
           })
           res.end(status)
+        } else {
+          res.end('hello')
         }
       }
     )
 
-    var port = parseInt(advertized_url.split(':')[2])
-    this.external_http_server.listen(this.on_server ? port : port)
+    this.external_http_server.listen(usePort)
 
-    console.log(`Bootstrapping external_wss at: ${advertized_url}`)
-
-    // lowtps/hightps
-
-    //new (base_port == 8433 && false
-    // ? require('uws')
     this.external_wss = new ws.Server({
       //noServer: true,
-      //port: port,
       clientTracking: false,
       perMessageDeflate: false,
+      // attach to existing HTTP server
       server: this.external_http_server,
       maxPayload: 64 * 1024 * 1024,
     })
@@ -183,49 +226,110 @@ export class Me {
     this.external_wss.on('error', function (err) {
       console.log(err)
     })
-    this.external_wss.on('connection', function (ws) {
-      ws.on('message', (msg) => {
-        this.external_rpc(ws, msg)
+    this.external_wss.on('connection', (websocket) => {
+      //console.log(websocket)
+      
+      websocket.on('message', (msg) => {
+        this.external_rpc(websocket, msg)
       })
     })
+
+    console.log(`Started external_wss at: ${usePort}`)
   }
 
   textMessage(they_pubkey, msg) {
     this.send(they_pubkey, {method: 'textMessage', msg: msg})
   }
 
-  // a generic interface to send a websocket message to some user or validator
-  // accepts Buffer or valid Service object
+  broadcastProfile() {
+    const peerHubs = []
+    for (const hub of this.sharedState.hubs) {
+      const ch = this.Channels[hub.addr]
+      if (ch) {
+
+        const entriesWithInboundCapacity = Object.keys(ch.entries).filter(e=>{
+          return true //this.deriveEntry(ch, e).inbound_capacity > 0
+        })
+
+        if (entriesWithInboundCapacity.length > 0) {
+          peerHubs.push([hub.addr, entriesWithInboundCapacity])
+        }
+      }
+    }
+    
+
+    this.send(this.coordinator, {
+      method: 'broadcastProfile',
+      addr: this.signer.address,
+      data: {
+        addr: this.signer.address,
+        boxPubkey: Buffer.from(this.boxPair.publicKey).toString('hex'),
+        hubs: peerHubs
+      }
+    })
+  }
+
+  async getProfile(addr) {
+    return (await this.sendSync(this.coordinator, {method:'getProfiles', addresses: [addr]}))[0]
+  }
+
+  // a generic interface to send a websocket message
   send(addr:string, msg:any, optional_cb?:unknown) {
-    if (this.sockets[addr]) {
-      this.sockets[addr].send(msg)
+    msg.addr = this.signer.address
+    msg.timestamp = new Date()
+
+    msg = Buffer.from(JSON.stringify(msg))
+
+    if (this.websockets[addr]) {
+      // if there is live connection to this address
+      this.websockets[addr].send(msg)
       return true
     } else {
-      
-      this.sockets[addr] = new WebSocketClient()
+      // try to connect using their advertised URI
+      this.websockets[addr] = new WebSocketClient()
 
-      this.sockets[addr].onmessage = (msg) => {
-        this.external_rpc(this.sockets[addr], msg)
+      this.websockets[addr].onmessage = (msg) => {
+        this.external_rpc(this.websockets[addr], msg)
       }
 
-      this.sockets[addr].onerror = function (e) {
+      this.websockets[addr].onerror = (e)=>{
         console.log('Failed to open the socket to ', addr, e)
-        delete this.sockets[addr]
+        delete this.websockets[addr]
       }
-      this.sockets[addr].onopen = function (e) {
-        if (this.addr) {
-          this.send(addr, {method: 'auth', data: new Date()})
+
+      this.websockets[addr].onopen = (e)=>{
+        // first auth, then send actual message
+        if (this.signer.address) {
+          const authMsg = Buffer.from(JSON.stringify({
+            method: 'auth', 
+            addr: this.signer.address, 
+            data: new Date()
+          }))
+
+          this.websockets[addr].send(authMsg)
         }
 
-        // first auth, then send actual message
-
-        this.sockets[addr].send(msg)
+        this.websockets[addr].send(msg)
       }
 
-      this.sockets[addr].open('hub.uri')
+      const foundHub = this.sharedState.hubs.find(h=>h.addr == addr)
+      if (foundHub) {
+        this.websockets[addr].open(foundHub.uri)
+        return true
+      } else {
+        console.log("No such hub or socket exists for addr "+addr)
+        return false
+      }
     }
+  }
 
-    return true
+  sendSync(addr:string, msg:any) {
+    return new Promise(async (resolve) => {
+      msg.callback = crypto.randomBytes(32).toString('hex')
+      this.websocketCallbacks[addr+'_'+msg.callback] = resolve
+
+      this.send(addr, msg)
+    })
   }
 
   async fatal(reason) {
@@ -267,8 +371,8 @@ export class Me {
 
         while (this.section_queue[key].length > 0) {
           try {
-            let [got_job, got_resolve] = this.section_queue[key].shift()
-            let started = performance.now()
+            const [got_job, got_resolve] = this.section_queue[key].shift()
+            //const started = performance.now()
 
             //let deadlock = setTimeout(function() {
             //  this.fatal('Deadlock in q ' + key)
@@ -288,6 +392,29 @@ export class Me {
         delete this.section_queue[key]
       }
     })
+  }
+
+  buildEntry(assetId: number){
+    return {
+      type: 'AddEntryNew',
+      assetId: assetId,
+      
+      collateral: 0,
+      ondelta: 0,
+  
+      offdelta: 0,
+   
+  
+      pending_withdraw: 0,
+      they_pending_withdraw: 0,
+  
+      credit_limit: 0,
+      they_credit_limit: 0,
+  
+      interest_rate: 0,
+      they_interest_rate: 0
+  
+    }
   }
 
   /*
@@ -375,22 +502,13 @@ export class Me {
 
 
   */
-  internal_rpc = require('./internal_rpc')
-  external_rpc = require('./external_rpc')
-  
-  getChannel = require('./offchain/get_channel')
-  payChannel = require('./offchain/pay_channel')
-  flushChannel = require('./offchain/flush_channel')
-  updateChannel = require('./offchain/update_channel')
-  
-  react = async function (result) {
+  async react(result) {
     // Flush an object to browser websocket. Send force=false for lazy react (for high-tps nodes like banks)
 
-    // banks dont react OR no alive browser socket
-    if (this.my_bank && !result.force) {
-      return //l('No working this.browser')
-    }
+    
 
+    Object.assign(result, this.sharedState)
+    
     //if (new Date() - this.last_react < 500) {
       //l('reacting too often is bad for performance')
       //return false
@@ -402,16 +520,22 @@ export class Me {
       return
     }
 
-    if (this.account) {
+    if (this.signer) {
       // slice channels
-      result.channels = this.Channels
-      result.account = this.account
-      result.batch = this.batch
-      
+      result.channels = Object.values(this.Channels)
+
+      result.channels.forEach(element => {
+        element.derived = {}
+        Object.keys(element.entries).forEach(id=>{
+          element.derived[id] = this.deriveEntry(element, id)
+        })
+      });
+
+
     }
 
     try {
-      let data = JSON.stringify(result)
+      const data = JSON.stringify(result)
       this.browsers.map((ws) => {
         if (ws.readyState == 1) {
           ws.send(data)
@@ -422,6 +546,77 @@ export class Me {
     }
   }
 
+  channelKey(a1:string, a2:string): string {
+    const buf_a1 = Buffer.from(a1.slice(2).toLowerCase(), "hex");
+    const buf_a2 = Buffer.from(a2.slice(2).toLowerCase(), "hex");
+    const ordered_pair =
+      Buffer.compare(buf_a1, buf_a2) == 1 ? [buf_a2, buf_a1] : [buf_a1, buf_a2];
+    return "0x" + Buffer.concat(ordered_pair).toString("hex");
+
+  }
+
+  getCanonicalEntries(ch): Array<any>{
+
+    const stateEntries = []
+
+    for (const e of (<any>Object).values(ch.entries)) {
+      if (['AddEntryNew', 
+      'DeleteEntrySent', 
+      'DeleteEntryAck'].includes(e.type)) continue
+
+
+      // asset_id, offdelta, left_locks, right_locks
+      const left_locks = []
+      const right_locks = []
+
+      for (const t of ch.locks) {
+        // omit
+        if ([
+          'AddLockNew',
+          'DeleteLockSent',
+          'DeleteLockAck'
+        ].includes(t.type)) continue
+
+        if (ch.isLeft ^ t.inbound) {
+          left_locks.push([t.amount, t.exp, t.hash])
+        } else {
+          right_locks.push([t.amount, t.exp, t.hash])
+        }
+      }
+
+
+
+      stateEntries.push([e.assetId, e.offdelta, left_locks, right_locks])
+    }
+
+    return stateEntries
+
+  }
+
+  getCanonicalState(ch): string{
+    // offdelta is int and can be negative
+    const encodedEntries = this.ethers.utils.defaultAbiCoder.encode(
+      ['(uint,int,(uint,uint,bytes32)[],(uint,uint,bytes32)[])[]'], 
+      [this.getCanonicalEntries(ch)]
+      )
+    
+    return this.ethers.utils.defaultAbiCoder.encode(["uint", "bytes", "uint", "uint", "bytes32"], [
+      this.MessageType.DisputeProof,
+      this.channelKey(this.signer.address, ch.partner),
+      ch.channel_counter,
+      ch.dispute_nonce,
+      this.ethers.utils.keccak256(encodedEntries),
+    ])
+  }
+
+  internal_rpc = require('./internal_rpc')
+  external_rpc = require('./external_rpc')
+ 
+  buildChannel = require('./offchain/build_channel')
+  deriveEntry = require('./offchain/derive_entry')
+  payChannel = require('./offchain/pay_channel')
+  flushChannel = require('./offchain/flush_channel')
+  updateChannel = require('./offchain/update_channel')
+  
 }
 
-//module.exports = Me

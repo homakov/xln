@@ -21,11 +21,11 @@ export default {
       let colors = {
         gap: '',
 
-        they_uninsured: '#dc3545',
-        uninsured: '#dc3545',
+        they_unsecured: '#dc3545',
+        unsecured: '#dc3545',
 
-        they_insured: '#5cb85c',
-        insured: '#5cb85c',
+        they_secured: '#5cb85c',
+        secured: '#5cb85c',
 
         available_credit: '#ff9c9c',
         they_available_credit: '#ff9c9c',
@@ -33,7 +33,7 @@ export default {
 
       let share =
         (type == 'gap'
-          ? this.max_visual_capacity - this.derived.capacity
+          ? this.max_visual_capacity - this.derived.total_capacity
           : this.derived[type]) / this.max_visual_capacity
 
       let style = {
@@ -59,14 +59,14 @@ export default {
       ></div>
 
       <div
-        v-bind:style="styles('insured')"
-        v-html="displayOrNot('insured')"
+        v-bind:style="styles('secured')"
+        v-html="displayOrNot('secured')"
         class="progress-bar"
       ></div>
 
       <div
-        v-bind:style="styles('uninsured')"
-        v-html="displayOrNot('uninsured')"
+        v-bind:style="styles('unsecured')"
+        v-html="displayOrNot('unsecured')"
         class="progress-bar"
       ></div>
  
@@ -74,14 +74,14 @@ export default {
       <div v-bind:style="styles('gap')" class="progress-bar"></div>
 
       <div
-        v-bind:style="styles('they_uninsured')"
-        v-html="displayOrNot('they_uninsured')"
+        v-bind:style="styles('they_unsecured')"
+        v-html="displayOrNot('they_unsecured')"
         class="progress-bar"
       ></div>
 
       <div
-        v-bind:style="styles('they_insured')"
-        v-html="displayOrNot('they_insured')"
+        v-bind:style="styles('they_secured')"
+        v-html="displayOrNot('they_secured')"
         class="progress-bar"
       ></div>
 

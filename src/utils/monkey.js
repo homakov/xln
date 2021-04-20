@@ -148,11 +148,7 @@ let run = async () => {
       // was this entirely new user created since genesis?
       if (!monkey5) failed.push('monkey5')
 
-      //if (monkey5ins < 100) failed.push('monkey5insurance')
-
-      if ((await Block.count()) < 2) failed.push('blocks')
-      if ((await Channel.count()) < 5) failed.push('deltas')
-
+      
       let e2e = 'e2e: ' + (failed.length == 0 ? 'success' : failed.join(', '))
       l(e2e)
 

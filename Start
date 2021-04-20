@@ -1,1 +1,2 @@
-node `pwd`/src/xln.js
+
+npx ts-node src/xln "$@"

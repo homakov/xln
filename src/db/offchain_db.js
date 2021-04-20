@@ -260,33 +260,10 @@ class OffchainDB {
 
     this.db = new Sequelize(database, username, password, config)
 
-    this.Channel = this.db.define(
-      'channel',
-      {
-        // between who and who
-        they_pubkey: Sequelize.BLOB,
+    
 
-        // higher nonce is valid
-        dispute_nonce: {
-          type: Sequelize.INTEGER,
-          defaultValue: 0,
-        },
-
-        // used during rollbacks
-        rollback_nonce: {
-          type: Sequelize.INTEGER,
-          defaultValue: 0,
-        },
-
-        status: {
-          type: Sequelize.ENUM(
-            'main',
-            'sent',
-            'merge',
-            'disputed',
-            'CHEAT_dontack'
-          ),
-        },
+    
+            
 
         pending: Sequelize.BLOB,
 

@@ -1,7 +1,7 @@
 // make a request to ask for mutual withdrawal proof from partner
 // the promise returns either a valid proof or error
 module.exports = async function (ch, subch, amount) {
-  // reset values
+
   //ch.d.withdraw_sig = null
   //ch.d.withdraw_amount = 0
 

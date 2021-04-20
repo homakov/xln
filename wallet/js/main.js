@@ -194,9 +194,21 @@ window.render = (r) => {
   if (r.channels && r.channels.length > 0) {
     // find max visual capacity per asset
     for (let i = 0; i < r.assets.length; i++) {
-      let assetId = r.assets[i].id
-      let caps = r.channels.map((ch) => ch.derived[assetId].capacity)
-      app.max_visual_capacity[assetId] = Math.round(Math.max(...caps) * 1.1)
+
+      let caps = r.channels.map((ch) => {
+        if (!ch.entries[i]) return 0
+
+        // prefill
+        const key = ch.partner+i
+        if (!app.prefill.hasOwnProperty(key)) {
+          app.prefill[key] = {
+            credit_limit: ch.entries[i].credit_limit
+          }
+        }
+
+        return ch.entries[i].credit_limit + ch.entries[i].they_credit_limit + ch.entries[i].collateral
+      })
+      app.max_visual_capacity[i] = Math.round(Math.max(...caps) * 1.1)
     }
   }
 

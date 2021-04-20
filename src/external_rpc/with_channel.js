@@ -1,4 +1,4 @@
-module.exports = async (pubkey, json, ws) => {
+module.exports = async (pubkey, json) => {
   //todo: ensure no conflicts happen if two parties withdraw from each other at the same time
 
   await section(['use', pubkey], async () => {
@@ -12,26 +12,6 @@ module.exports = async (pubkey, json, ws) => {
       await subch.save()
 
       me.textMessage(ch.d.they_pubkey, 'Updated credit limits')
-    } else if (json.method == 'requestCredit') {
-      let subch = ch.d.subchannels.by('asset', json.asset)
-
-      subch.credit = 100000
-
-      me.send(ch.d.they_pubkey, {
-        method: 'setLimits',
-        asset: json.asset,
-        credit: subch.credit,
-      })
-
-      await subch.save()
-
-      // forced flush, gives them sig
-      await me.flushChannel(pubkey, false)
-
-      me.textMessage(
-        ch.d.they_pubkey,
-        'Congrats, we opened a credit line for you'
-      )
     } else if (json.method == 'requestInsurance') {
       let subch = ch.d.subchannels.by('asset', json.asset)
       subch.they_requested_insurance = true
@@ -164,17 +144,11 @@ module.exports = async (pubkey, json, ws) => {
       })
     } else if (json.method == 'testnet') {
       if (json.action == 'faucet') {
-        var friendly_invoice = [
-          'You are welcome!',
-          'Demo',
-          "It's free money!",
-          '\'"><',
-        ][3]
 
         let pay = {
           address: json.address,
           amount: json.amount,
-          private_invoice: friendly_invoice,
+          private_invoice: 'hi',
           asset: json.asset,
         }
 
@@ -183,44 +157,8 @@ module.exports = async (pubkey, json, ws) => {
     }
   })
 
-  if (json.method == 'updateChannel') {
-    //l(msg.length, ' from ', trim(pubkey), toHex(sha3(msg)))
 
-    // ackSig defines the sig of last known state between two parties.
-    // then each transitions contains an action and an ackSig after action is committed
-    let flushable = await section(['use', pubkey], async () => {
-      //loff(`--- Start update ${trim(pubkey)} - ${transitions.length}`)
-      return me.updateChannel(
-        pubkey,
-        r(fromHex(json.ackState)),
-        fromHex(json.ackSig),
-        json.transitions,
-        json.signedState
-      )
-    })
+  
+    
 
-    /*
-  We MUST ack if there were any transitions, otherwise if it was ack w/o transitions
-  to ourselves then do an opportunistic flush (flush if any). Forced ack here would lead to recursive ack pingpong!
-  Flushable are other channels that were impacted by this update
-  Sometimes sender is already included in flushable, so don't flush twice
-  */
-
-    let flushed = [me.flushChannel(pubkey, json.transitions.length == 0)]
-
-    if (flushable) {
-      for (let fl of flushable) {
-        // can be opportunistic also
-        if (!fl.equals(pubkey)) {
-          flushed.push(me.flushChannel(fl, true))
-        } else {
-          //loff('Tried to flush twice')
-        }
-      }
-    }
-    await Promise.all(flushed)
-
-    // use lazy react for external requests
-    react({private: true})
-  }
 }

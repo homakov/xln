@@ -1,13 +1,10 @@
 // Internal RPC serves requests made by the user's browser or by the merchant server app
 
-const Router = require('../router')
-const withdraw = require('../offchain/withdraw')
+import *  as Router from '../router'
 
-module.exports = async function (ws, json) {
-  if (json.leak_channels) {
-    this.leak_channels_ws.push(ws)
-    return
-  }
+module.exports = async function internal_rpc (ws, json) {
+  const result = {}
+
   // auth_code prevents all kinds of CSRF and DNS rebinding
   // strong coupling between the daemon and the browser client
   if (json.auth_code != this.Config.auth_code && ws != 'admin') {
@@ -31,7 +28,7 @@ module.exports = async function (ws, json) {
       // triggered by frontend to update
 
       // public + private info
-      this.react({force: true})
+      this.react({})
       //return
 
       break
@@ -57,35 +54,65 @@ module.exports = async function (ws, json) {
       if (this.external_http_server) {
         this.external_http_server.close()
         this.external_wss.clients.forEach((c) => c.close())
-        // Object.keys(me.sockets).forEach( c=>me.sockets[c].end() )
+        // Object.keys(me.websockets).forEach( c=>me.websockets[c].end() )
       }
 
       this.Config = {}
 
       this.fatal(1)
 
-      this.react({pubkey: null})
+      this.react({address: null})
       break
 
-    case 'sendOffchain':
+    case 'payChannel':
       await this.payChannel(json.params)
+      this.react({})
       break
 
     case 'startDispute':
-      let ch = await this.getChannel(json.params.they_pubkey)
+      //let ch = await this.getChannel(json.params.they_pubkey)
 
       this.react({confirm: 'OK'})
 
       break
-    case 'withChannel':
-      require('./with_channel')(json.params)
+
+    case 'openChannel':{
+      await this.flushChannel(json.params.address, true)
+
+      this.broadcastProfile()
+      break
+    }
+
+    case 'flushTransition':{
+      const ch = this.Channels[json.params.address]
+
+      ch.entries[json.params.assetId] = this.buildEntry(json.params.assetId)
+
+      await this.flushChannel(json.params.address)
+      this.react({})
+
+      this.broadcastProfile()
+
+      break
+    }
+    
+
+    case 'setCreditLimit':
+
+      this.send(json.params.partner, json.params)
+
+      this.Channels[json.params.partner].entries[json.params.assetId].credit_limit = json.params.credit_limit
+      
+      this.react({})
+      this.broadcastProfile()
+
       break
 
     case 'onchainFaucet':
       json.params.pubkey = this.pubkey
       json.params.method = 'onchainFaucet'
 
-      this.send(Config.banks[0], json.params)
+      this.send(this.coordinator, json.params)
 
       break
 
@@ -94,23 +121,43 @@ module.exports = async function (ws, json) {
       break
 
     case 'broadcast':
-      Periodical.broadcast(json.params)
+      //Periodical.broadcast(json.params)
       this.react({force: true})
       return false
       break
 
-    case 'getRoutes':
-      let bestRoutes = await Router.bestRoutes(json.params.address, json.params)
+    case 'getRoutes': {
+      //got direct channel
+      if (this.Channels[json.params.address]) {
+        return [
+          [0, []]
+        ]
+      }
+
+      const profile = await this.getProfile(json.params.address)
+
+      if (!profile) return this.react({alert: "Invalid address"})
+
+      //profile.hubs
+
+      const bestRoutes = [
+        [0, [this.coordinator]]
+      ]
+
+
+      //await Router.bestRoutes(json.params.address, json.params)
       this.react({
-        parsedAddress: await parseAddress(json.params.address),
+        //parsedAddress: await parseAddress(json.params.address),
         bestRoutes: bestRoutes,
+        hubsForAddress: profile.hubs
       })
 
       break
+    }
 
     case 'clearBatch':
       this.batch = []
-      react({confirm: 'Batch cleared'})
+      this.react({confirm: 'Batch cleared'})
       break
 
     case 'getinfo':

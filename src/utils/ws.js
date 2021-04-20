@@ -50,7 +50,7 @@ WebSocketClient.prototype.open = function(url) {
 }
 WebSocketClient.prototype.send = function(data) {
   if (this.instance && this.instance.readyState != 1) {
-    //l("Socket is not ready")
+    //console.log("Socket is not ready")
     return false
   }
   setTimeout(() => {
@@ -60,7 +60,7 @@ WebSocketClient.prototype.send = function(data) {
       this.instance.send(data)
       return true
     } catch (e) {
-      l('Failed to send ws:', e)
+      console.log('Failed to send ws:', e)
       return false
       //this.instance.emit('error', e)
     }
