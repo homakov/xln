@@ -22,6 +22,10 @@ module.exports = async function internal_rpc (ws, json) {
     //setBrowser(ws)
   }
 
+  if (!this.signer && !['load','login'].includes(json.method)){
+    return console.log("Authenticated method only")
+  }
+
   // internal actions that require authorization
 
   switch (json.method) {
