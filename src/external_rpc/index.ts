@@ -1,5 +1,8 @@
 // External RPC processes requests coming from outside world.
 import * as WebSocketClient from '../utils/ws'
+
+import { utils, ethers } from 'ethers'
+
 module.exports = async function external_rpc(ws, msg) {
   // uws gives ArrayBuffer, we create a view
 
@@ -26,11 +29,60 @@ module.exports = async function external_rpc(ws, msg) {
       }
     } else if (json.method == 'callback') {
       const key = addr+'_'+json.callback
-      this.websocketCallbacks[key](json.data)
-      delete this.websocketCallbacks[key]
-
+      const fn = this.websocketCallbacks[key]
+      if (fn) {
+        delete this.websocketCallbacks[key]
+        fn(json.data)  
+      }
     } else if (json.method == 'broadcastProfile') {
       this.Profiles[json.addr] = json.data
+    } else if (json.method == 'cooperativeClose') {
+
+      const ch = this.Channels[json.addr]
+      if (!ch) {
+        return console.log("no channel")
+      }
+
+      const proof = this.getCooperativeProof(ch)
+      console.log('coop proof', proof)
+      const sig = await this.hashAndSign(proof)
+
+      this.send(json.addr, {method: 'callback', callback: json.callback, data: sig})
+
+    } else if (json.method == 'getWithdrawalSig') {
+
+      const ch = this.Channels[json.addr]
+      if (!ch) {
+        return console.log("no channel")
+      }
+
+      const delayed = []
+
+      // ensure pairs are valid
+      for (const [assetId, amountToWithdraw] of json.pairs) {
+
+        if (!ch.entries[assetId]) {
+          return console.log("Bad withdrawal request")
+        }
+
+        const derived = this.deriveEntry(ch, assetId)
+
+        if (amountToWithdraw <= derived.inbound_capacity && amountToWithdraw <= derived.they_secured) {
+          // only executed if everything is correct
+          delayed.push(()=>{
+            ch.entries[assetId].they_pending_withdraw = amountToWithdraw
+          })
+
+        } else {
+          return console.log("Not enough funds")
+        }
+      }
+
+      delayed.map(f=>f())
+
+      const sig = await this.hashAndSign(this.getWithdrawalProof(ch, json.pairs))
+
+      this.send(json.addr, {method: 'callback', callback: json.callback, data: sig})
     } else if (json.method == 'getProfiles') {
       const profiles = json.addresses.map(a=>this.Profiles[a])
 
@@ -42,12 +94,6 @@ module.exports = async function external_rpc(ws, msg) {
       await this.section(json.addr, async () => {
 
         await this.updateChannel(json.addr, json)
-
-
-
-
-
-
 
 
       })

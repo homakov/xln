@@ -222,23 +222,14 @@ module.exports = {
   addressToName: (address) => {
     // returns verified hub or token name
     const t = {
-      '0x627306090abaB3A6e1400e9345bC60c78a8BEf57': 'Hub1'
+      '0x627306090abaB3A6e1400e9345bC60c78a8BEf57': 'Hub1',
+      '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2': 'WETH',
+      '0x6B175474E89094C44Da98b954EedeAC495271d0F': 'DAI'
     }
     return t[address] ? t[address] : address
   },
 
-  getAsset: (asset, user) => {
-    if (!user) user = app.record
-    if (!user) return 0
-
-    let b = user.balances.find((b) => b.asset == asset)
-
-    if (b) {
-      return b.balance
-    } else {
-      return 0
-    }
-  },
+  
 
   showGraph: () => {
     if (!window.bankgraph) return
@@ -433,29 +424,17 @@ module.exports = {
 
   ts: () => Math.round(new Date()),
 
+  nonEmptyBatch: (batch) => {
+    if (!batch.reserveToChannel) return false
+    return Object.values(batch).join('') != '0'
+
+  },
+
   prettyBatch: (batch) => {
     let r = ''
-    for (let tx of batch) {
-      if (['withdraw', 'deposit'].includes(tx[0])) {
-        let capital = tx[0][0].toUpperCase() + tx[0].slice(1)
-        r += `<span class="badge badge-dark">${capital} ${app.toTicker(
-          tx[1][0]
-        )}</span>&nbsp;`
-
-        for (let o of tx[1][1]) {
-          if (tx[0] == 'withdraw') {
-            r += `<span class="badge badge-danger">${app.commy(
-              o[0]
-            )} from ${app.addressToName(o[1])}</span>&nbsp;`
-          } else {
-            r += `<span class="badge badge-success">${app.commy(
-              o[0]
-            )} to ${app.addressToName(o[1])}</span>&nbsp;`
-          }
-        }
-      } else {
-        r += `<span class="badge badge-danger">${tx[0]}</span>&nbsp;`
-      }
+    for (const name of Object.keys(batch)) {
+      if (batch[name].length > 0)
+      r += `<span class="badge badge-danger">${name} ${batch[name].length}</span>&nbsp;`
     }
     return r
   },

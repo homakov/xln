@@ -12,7 +12,7 @@ export default {
       let a = this.derived[type]
       // at least 5% to be readable
       if (a / this.max_visual_capacity > 0.05) {
-        return this.commy(a, true, false)
+        return a //this.commy(a, true, false)
       } else {
         return ''
       }

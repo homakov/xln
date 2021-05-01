@@ -64,7 +64,8 @@ module.exports = async function(addr, forceAck) {
     dispute_nonce: ch.dispute_nonce,
 
     ackEntries: this.getCanonicalEntries(ch),
-    ackSig: await this.signer.signMessage(this.getCanonicalState(ch)),
+    ackState: this.getCanonicalDisputeProof(ch),
+    ackSig: await this.hashAndSign(this.getCanonicalDisputeProof(ch)),
 
     transitions: [],
  
@@ -203,10 +204,10 @@ module.exports = async function(addr, forceAck) {
     ch.dispute_nonce += ch.isLeft ? 2 : 1
 
     flushData.finalEntries = this.getCanonicalEntries(ch)
-    flushData.finalState = this.getCanonicalState(ch)
+    flushData.finalState = this.getCanonicalDisputeProof(ch)
       
     // signing the final state
-    flushData.finalSig = await this.signer.signMessage(this.getCanonicalState(ch))
+    flushData.finalSig = await this.hashAndSign(this.getCanonicalDisputeProof(ch))
   }
   
 

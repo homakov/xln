@@ -20,9 +20,11 @@ maxport=8002
 xln_cluster_args="ts-node src/xln --wallet-url=http://localhost:$wallet_port --color --mmonkey=$maxport"
 
 # Clean up, stop all demoapps and nodes
-npx pm2 flush
+npx pm2 flush  || true
 npx pm2 delete all || true
-killall node 2>/dev/null || true
+
+pkill -f XLN >/dev/null || true
+//killall node 2>/dev/null || true
 
 #rm -rf data*
 #rm -rf isolate*

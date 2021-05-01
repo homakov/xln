@@ -118,7 +118,20 @@ interface XLNInterface extends ethers.utils.Interface {
     values: [
       {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       }
     ]
@@ -130,7 +143,20 @@ interface XLNInterface extends ethers.utils.Interface {
         partner: string;
         dispute_nonce: BigNumberish;
         entries_hash: BytesLike;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       }
     ]
@@ -140,7 +166,20 @@ interface XLNInterface extends ethers.utils.Interface {
     values: [
       {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
       }
     ]
   ): string;
@@ -158,19 +197,58 @@ interface XLNInterface extends ethers.utils.Interface {
       {
         cooperativeProof: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         disputeProof: {
           partner: string;
           dispute_nonce: BigNumberish;
           entries_hash: BytesLike;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         revealEntries: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
         }[];
         reserveToChannel: {
           receiver: string;
@@ -198,6 +276,7 @@ interface XLNInterface extends ethers.utils.Interface {
           amount: BigNumberish;
         }[];
         revealSecret: BytesLike[];
+        cleanSecret: BytesLike[];
         hub_id: BigNumberish;
       }
     ]
@@ -622,7 +701,20 @@ export class XLN extends Contract {
     cooperativeProof(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -631,7 +723,20 @@ export class XLN extends Contract {
     "cooperativeProof((address,tuple[],bytes))"(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -642,7 +747,20 @@ export class XLN extends Contract {
         partner: string;
         dispute_nonce: BigNumberish;
         entries_hash: BytesLike;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -653,7 +771,20 @@ export class XLN extends Contract {
         partner: string;
         dispute_nonce: BigNumberish;
         entries_hash: BytesLike;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -662,7 +793,20 @@ export class XLN extends Contract {
     revealEntries(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -670,7 +814,20 @@ export class XLN extends Contract {
     "revealEntries((address,tuple[]))"(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
@@ -725,19 +882,58 @@ export class XLN extends Contract {
       b: {
         cooperativeProof: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         disputeProof: {
           partner: string;
           dispute_nonce: BigNumberish;
           entries_hash: BytesLike;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         revealEntries: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
         }[];
         reserveToChannel: {
           receiver: string;
@@ -765,28 +961,68 @@ export class XLN extends Contract {
           amount: BigNumberish;
         }[];
         revealSecret: BytesLike[];
+        cleanSecret: BytesLike[];
         hub_id: BigNumberish;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    "processBatch((tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],bytes32[],uint256))"(
+    "processBatch((tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],bytes32[],bytes32[],uint256))"(
       b: {
         cooperativeProof: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         disputeProof: {
           partner: string;
           dispute_nonce: BigNumberish;
           entries_hash: BytesLike;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         revealEntries: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
         }[];
         reserveToChannel: {
           receiver: string;
@@ -814,6 +1050,7 @@ export class XLN extends Contract {
           amount: BigNumberish;
         }[];
         revealSecret: BytesLike[];
+        cleanSecret: BytesLike[];
         hub_id: BigNumberish;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -1364,7 +1601,20 @@ export class XLN extends Contract {
   cooperativeProof(
     params: {
       partner: string;
-      entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+      entries: {
+        asset_id: BigNumberish;
+        offdelta: BigNumberish;
+        left_locks: {
+          amount: BigNumberish;
+          until_block: BigNumberish;
+          hash: BytesLike;
+        }[];
+        right_locks: {
+          amount: BigNumberish;
+          until_block: BigNumberish;
+          hash: BytesLike;
+        }[];
+      }[];
       sig: BytesLike;
     },
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -1373,7 +1623,20 @@ export class XLN extends Contract {
   "cooperativeProof((address,tuple[],bytes))"(
     params: {
       partner: string;
-      entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+      entries: {
+        asset_id: BigNumberish;
+        offdelta: BigNumberish;
+        left_locks: {
+          amount: BigNumberish;
+          until_block: BigNumberish;
+          hash: BytesLike;
+        }[];
+        right_locks: {
+          amount: BigNumberish;
+          until_block: BigNumberish;
+          hash: BytesLike;
+        }[];
+      }[];
       sig: BytesLike;
     },
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -1384,7 +1647,20 @@ export class XLN extends Contract {
       partner: string;
       dispute_nonce: BigNumberish;
       entries_hash: BytesLike;
-      entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+      entries: {
+        asset_id: BigNumberish;
+        offdelta: BigNumberish;
+        left_locks: {
+          amount: BigNumberish;
+          until_block: BigNumberish;
+          hash: BytesLike;
+        }[];
+        right_locks: {
+          amount: BigNumberish;
+          until_block: BigNumberish;
+          hash: BytesLike;
+        }[];
+      }[];
       sig: BytesLike;
     },
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -1395,7 +1671,20 @@ export class XLN extends Contract {
       partner: string;
       dispute_nonce: BigNumberish;
       entries_hash: BytesLike;
-      entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+      entries: {
+        asset_id: BigNumberish;
+        offdelta: BigNumberish;
+        left_locks: {
+          amount: BigNumberish;
+          until_block: BigNumberish;
+          hash: BytesLike;
+        }[];
+        right_locks: {
+          amount: BigNumberish;
+          until_block: BigNumberish;
+          hash: BytesLike;
+        }[];
+      }[];
       sig: BytesLike;
     },
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -1404,7 +1693,20 @@ export class XLN extends Contract {
   revealEntries(
     params: {
       partner: string;
-      entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+      entries: {
+        asset_id: BigNumberish;
+        offdelta: BigNumberish;
+        left_locks: {
+          amount: BigNumberish;
+          until_block: BigNumberish;
+          hash: BytesLike;
+        }[];
+        right_locks: {
+          amount: BigNumberish;
+          until_block: BigNumberish;
+          hash: BytesLike;
+        }[];
+      }[];
     },
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -1412,7 +1714,20 @@ export class XLN extends Contract {
   "revealEntries((address,tuple[]))"(
     params: {
       partner: string;
-      entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+      entries: {
+        asset_id: BigNumberish;
+        offdelta: BigNumberish;
+        left_locks: {
+          amount: BigNumberish;
+          until_block: BigNumberish;
+          hash: BytesLike;
+        }[];
+        right_locks: {
+          amount: BigNumberish;
+          until_block: BigNumberish;
+          hash: BytesLike;
+        }[];
+      }[];
     },
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
@@ -1461,19 +1776,58 @@ export class XLN extends Contract {
     b: {
       cooperativeProof: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       }[];
       disputeProof: {
         partner: string;
         dispute_nonce: BigNumberish;
         entries_hash: BytesLike;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       }[];
       revealEntries: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
       }[];
       reserveToChannel: {
         receiver: string;
@@ -1501,28 +1855,68 @@ export class XLN extends Contract {
         amount: BigNumberish;
       }[];
       revealSecret: BytesLike[];
+      cleanSecret: BytesLike[];
       hub_id: BigNumberish;
     },
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  "processBatch((tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],bytes32[],uint256))"(
+  "processBatch((tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],bytes32[],bytes32[],uint256))"(
     b: {
       cooperativeProof: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       }[];
       disputeProof: {
         partner: string;
         dispute_nonce: BigNumberish;
         entries_hash: BytesLike;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       }[];
       revealEntries: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
       }[];
       reserveToChannel: {
         receiver: string;
@@ -1550,6 +1944,7 @@ export class XLN extends Contract {
         amount: BigNumberish;
       }[];
       revealSecret: BytesLike[];
+      cleanSecret: BytesLike[];
       hub_id: BigNumberish;
     },
     overrides?: Overrides & { from?: string | Promise<string> }
@@ -2003,7 +2398,20 @@ export class XLN extends Contract {
     cooperativeProof(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: CallOverrides
@@ -2012,7 +2420,20 @@ export class XLN extends Contract {
     "cooperativeProof((address,tuple[],bytes))"(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: CallOverrides
@@ -2023,7 +2444,20 @@ export class XLN extends Contract {
         partner: string;
         dispute_nonce: BigNumberish;
         entries_hash: BytesLike;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: CallOverrides
@@ -2034,7 +2468,20 @@ export class XLN extends Contract {
         partner: string;
         dispute_nonce: BigNumberish;
         entries_hash: BytesLike;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: CallOverrides
@@ -2043,7 +2490,20 @@ export class XLN extends Contract {
     revealEntries(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
       },
       overrides?: CallOverrides
     ): Promise<boolean>;
@@ -2051,7 +2511,20 @@ export class XLN extends Contract {
     "revealEntries((address,tuple[]))"(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
       },
       overrides?: CallOverrides
     ): Promise<boolean>;
@@ -2106,19 +2579,58 @@ export class XLN extends Contract {
       b: {
         cooperativeProof: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         disputeProof: {
           partner: string;
           dispute_nonce: BigNumberish;
           entries_hash: BytesLike;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         revealEntries: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
         }[];
         reserveToChannel: {
           receiver: string;
@@ -2146,28 +2658,68 @@ export class XLN extends Contract {
           amount: BigNumberish;
         }[];
         revealSecret: BytesLike[];
+        cleanSecret: BytesLike[];
         hub_id: BigNumberish;
       },
       overrides?: CallOverrides
     ): Promise<boolean>;
 
-    "processBatch((tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],bytes32[],uint256))"(
+    "processBatch((tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],bytes32[],bytes32[],uint256))"(
       b: {
         cooperativeProof: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         disputeProof: {
           partner: string;
           dispute_nonce: BigNumberish;
           entries_hash: BytesLike;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         revealEntries: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
         }[];
         reserveToChannel: {
           receiver: string;
@@ -2195,6 +2747,7 @@ export class XLN extends Contract {
           amount: BigNumberish;
         }[];
         revealSecret: BytesLike[];
+        cleanSecret: BytesLike[];
         hub_id: BigNumberish;
       },
       overrides?: CallOverrides
@@ -2685,7 +3238,20 @@ export class XLN extends Contract {
     cooperativeProof(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -2694,7 +3260,20 @@ export class XLN extends Contract {
     "cooperativeProof((address,tuple[],bytes))"(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -2705,7 +3284,20 @@ export class XLN extends Contract {
         partner: string;
         dispute_nonce: BigNumberish;
         entries_hash: BytesLike;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -2716,7 +3308,20 @@ export class XLN extends Contract {
         partner: string;
         dispute_nonce: BigNumberish;
         entries_hash: BytesLike;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -2725,7 +3330,20 @@ export class XLN extends Contract {
     revealEntries(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -2733,7 +3351,20 @@ export class XLN extends Contract {
     "revealEntries((address,tuple[]))"(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
@@ -2766,19 +3397,58 @@ export class XLN extends Contract {
       b: {
         cooperativeProof: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         disputeProof: {
           partner: string;
           dispute_nonce: BigNumberish;
           entries_hash: BytesLike;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         revealEntries: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
         }[];
         reserveToChannel: {
           receiver: string;
@@ -2806,28 +3476,68 @@ export class XLN extends Contract {
           amount: BigNumberish;
         }[];
         revealSecret: BytesLike[];
+        cleanSecret: BytesLike[];
         hub_id: BigNumberish;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    "processBatch((tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],bytes32[],uint256))"(
+    "processBatch((tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],bytes32[],bytes32[],uint256))"(
       b: {
         cooperativeProof: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         disputeProof: {
           partner: string;
           dispute_nonce: BigNumberish;
           entries_hash: BytesLike;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         revealEntries: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
         }[];
         reserveToChannel: {
           receiver: string;
@@ -2855,6 +3565,7 @@ export class XLN extends Contract {
           amount: BigNumberish;
         }[];
         revealSecret: BytesLike[];
+        cleanSecret: BytesLike[];
         hub_id: BigNumberish;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -3160,7 +3871,20 @@ export class XLN extends Contract {
     cooperativeProof(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -3169,7 +3893,20 @@ export class XLN extends Contract {
     "cooperativeProof((address,tuple[],bytes))"(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -3180,7 +3917,20 @@ export class XLN extends Contract {
         partner: string;
         dispute_nonce: BigNumberish;
         entries_hash: BytesLike;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -3191,7 +3941,20 @@ export class XLN extends Contract {
         partner: string;
         dispute_nonce: BigNumberish;
         entries_hash: BytesLike;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
         sig: BytesLike;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -3200,7 +3963,20 @@ export class XLN extends Contract {
     revealEntries(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
@@ -3208,7 +3984,20 @@ export class XLN extends Contract {
     "revealEntries((address,tuple[]))"(
       params: {
         partner: string;
-        entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+        entries: {
+          asset_id: BigNumberish;
+          offdelta: BigNumberish;
+          left_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+          right_locks: {
+            amount: BigNumberish;
+            until_block: BigNumberish;
+            hash: BytesLike;
+          }[];
+        }[];
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
@@ -3241,19 +4030,58 @@ export class XLN extends Contract {
       b: {
         cooperativeProof: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         disputeProof: {
           partner: string;
           dispute_nonce: BigNumberish;
           entries_hash: BytesLike;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         revealEntries: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
         }[];
         reserveToChannel: {
           receiver: string;
@@ -3281,28 +4109,68 @@ export class XLN extends Contract {
           amount: BigNumberish;
         }[];
         revealSecret: BytesLike[];
+        cleanSecret: BytesLike[];
         hub_id: BigNumberish;
       },
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    "processBatch((tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],bytes32[],uint256))"(
+    "processBatch((tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],tuple[],bytes32[],bytes32[],uint256))"(
       b: {
         cooperativeProof: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         disputeProof: {
           partner: string;
           dispute_nonce: BigNumberish;
           entries_hash: BytesLike;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
           sig: BytesLike;
         }[];
         revealEntries: {
           partner: string;
-          entries: { asset_id: BigNumberish; offdelta: BigNumberish }[];
+          entries: {
+            asset_id: BigNumberish;
+            offdelta: BigNumberish;
+            left_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+            right_locks: {
+              amount: BigNumberish;
+              until_block: BigNumberish;
+              hash: BytesLike;
+            }[];
+          }[];
         }[];
         reserveToChannel: {
           receiver: string;
@@ -3330,6 +4198,7 @@ export class XLN extends Contract {
           amount: BigNumberish;
         }[];
         revealSecret: BytesLike[];
+        cleanSecret: BytesLike[];
         hub_id: BigNumberish;
       },
       overrides?: Overrides & { from?: string | Promise<string> }

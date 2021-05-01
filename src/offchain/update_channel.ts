@@ -5,8 +5,16 @@
 
 const nacl = require('../../lib/nacl')
 
+import { utils, ethers } from 'ethers'
 
 
+function swapType(array, fromType, toType) {
+  array.forEach(element => {
+    if (element.type == fromType) {
+      element.type = toType
+    }
+  });
+}
 
 
 module.exports = async function (
@@ -19,10 +27,15 @@ module.exports = async function (
 
   if (!this.Channels[json.addr]) {
     // if we are hub
-    this.buildChannel(json.addr)
-    console.log("created ", json.addr)
-    this.flushChannel(json.addr, true)
-    return
+    if (this.external_wss) {
+      this.buildChannel(json.addr)
+      console.log("created ", json.addr)  
+    } else {
+      // only hubs allow opening channel to them
+      return 
+    }
+    //this.flushChannel(json.addr, true)
+    //return
   } 
   
 
@@ -39,21 +52,18 @@ module.exports = async function (
     return
   }
 
-  function swapType(array, fromType, toType) {
-    array.forEach(element => {
-      if (element.type == fromType) {
-        element.type = toType
-      }
-    });
-  }
 
   console.log('received json', json)
+
+  /* 
+  Step 1. Verify current dispute_nonce and ackSig as an acknowledgement of current state
+  */
 
   // verify ack
   // our last known state has been ack.
 
   if(json.dispute_nonce == ch.dispute_nonce) {
-    const signer = this.ethers.utils.verifyMessage(this.getCanonicalState(ch), json.ackSig)
+    const signer = await this.hashAndVerify(this.getCanonicalDisputeProof(ch), json.ackSig)
 
     if (addr == signer) {
       // we must store latest dispute proof signature
@@ -66,7 +76,7 @@ module.exports = async function (
       swapType(Object.values(ch.locks), 'AddLockSent', 'AddLockAck')
       swapType(Object.values(ch.locks), 'DeleteLockSent', 'DeleteLockAck')
     } else {
-      console.log("Invalid signer for ackSig", signer)
+      console.log("Invalid signer for ackSig", signer, this.getCanonicalDisputeProof(ch), 'vs ', json.ackState)
     }
   } else {
     // they make transitions on top of different (older) dispute_nonce
@@ -166,7 +176,7 @@ module.exports = async function (
         // delete the lock right away IF we got the secret OR the payment is invalid
         inboundLock.type = 'DeleteLockNew'
 
-        if (boxData.secret && this.ethers.utils.keccak256(Buffer.from(boxData.secret,'hex')) == t.hash) {
+        if (boxData.secret && utils.keccak256(Buffer.from(boxData.secret,'hex')) == t.hash) {
           console.log("good secret")
           inboundLock.outcome = boxData.secret
           inboundLock.outcomeType = 'secret'
@@ -199,7 +209,7 @@ module.exports = async function (
 
       outboundLock.type = 'DeleteLockSent'
 
-      if (t.outcomeType == 'secret' && this.ethers.utils.keccak256(Buffer.from(t.outcome,'hex')) == outboundLock.hash) {
+      if (t.outcomeType == 'secret' && utils.keccak256(Buffer.from(t.outcome,'hex')) == outboundLock.hash) {
         // received valid preimage, apply the lock to offdelta
         ch.entries[t.assetId].offdelta += ch.isLeft ? -outboundLock.amount : outboundLock.amount
       } else {
@@ -232,9 +242,8 @@ module.exports = async function (
   if (stateChanged) {
     ch.dispute_nonce += ch.isLeft ? 1 : 2
 
-
     // verify finalSig
-    const signer = this.ethers.utils.verifyMessage(this.getCanonicalState(ch), json.finalSig)
+    const signer = await this.hashAndVerify(this.getCanonicalDisputeProof(ch), json.finalSig)
     if (signer == addr) {
 
       swapType(Object.values(ch.entries), 'AddEntrySent', 'AddEntryAck')

@@ -222,10 +222,10 @@ window.render = (r) => {
   if (
     firstLoad &&
     app.pubkey &&
-    app.tab == 'wallet' &&
+    app.tab == 'offchain' &&
     app.channels.length == 0
   ) {
-    //app.go('banks')
+    app.go('settings')
   }
 
   if (r.history && window.riskcanvas) {

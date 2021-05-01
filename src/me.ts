@@ -15,7 +15,7 @@ const querystring = require('querystring')
 import crypto = require('crypto')
 
 import { utils, ethers } from 'ethers'
-import { XLN__factory, TokenA__factory } from '../types/ethers-contracts'
+import { XLN__factory, TokenA__factory, XLN } from '../types/ethers-contracts'
 
 
 const RPC_HOST = 'http://127.0.0.1:8545'
@@ -36,12 +36,12 @@ export class Me {
   partners: any
 
   provider: any
-  L1: any
+  XLN: XLN
 
   MessageType = {
     JSON: 0,
-    CooperativeProof: 1,
-    WithdrawProof: 2,
+    WithdrawProof: 1,
+    CooperativeProof: 2,
     DisputeProof: 3,
   }
 
@@ -71,7 +71,7 @@ export class Me {
   Channels = {}
   Orders = {}
 
-  batch = []
+  
 
   websockets = {}
   websocketCallbacks = {}
@@ -120,9 +120,10 @@ export class Me {
   async start(seed: string):Promise<void> {
 
     this.signer = new this.ethers.Wallet(seed, new this.ethers.providers.JsonRpcProvider(RPC_HOST))
-    this.L1 = XLN__factory.connect(XLN_ADDRESS, this.signer)
+    this.XLN = XLN__factory.connect(XLN_ADDRESS, this.signer)
 
 
+    this.sharedState.batch = this.getEmptyBatch()
 
     const sk = Buffer.from(seed.substr(2), 'hex')
 
@@ -132,12 +133,30 @@ export class Me {
     
     await this.syncL1()
 
-    setInterval(()=>{this.syncL1()}, 2000)
+
+    setInterval(()=>{this.syncL1()}, 3000)
+
+    
 
     // are we a hub?
     const myHub = this.sharedState.hubs.find(h=>h.addr==this.signer.address)
     if (myHub) {
       this.startExternalRPC(parseInt(myHub.uri.split(':')[2]))
+
+      this.admin('reserveToChannel', {receiver: '0xf17f52151EbEF6C7334FAD080c5704D77216b732', partner: this.coordinator, pairs: [[0, 1000000]]})
+      this.admin('reserveToChannel', {receiver: '0x0d1d4e623D10F9FBA5Db95830F7d3839406C6AF2', partner: this.coordinator, pairs: [[0, 1000000]]})
+
+
+    } else {
+      setTimeout(async ()=>{
+        this.admin('openChannel', {address: this.coordinator})
+        await this.sleep(200)
+        this.admin('flushTransition', {address: this.coordinator, assetId: 0})
+        await this.sleep(200)
+        this.admin('setCreditLimit', {method: 'setCreditLimit', partner: this.coordinator, assetId: 0, credit_limit: 1000000})
+
+
+      },2000)
     }
 
     this.broadcastProfile()
@@ -150,10 +169,38 @@ export class Me {
     )
   }
 
+  admin(method, params) {
+    this.internal_rpc('admin', {method: method, params: params})
+  }
+
+  getEmptyBatch() {
+    return {
+      channelToReserve: [],
+      reserveToChannel: [],
+
+      reserveToToken: [],
+      tokenToReserve: [],
+
+      reserveToReserve: [],
+
+      cooperativeProof: [],
+      disputeProof: [],
+      revealEntries: [],
+
+      revealSecret: [],
+      cleanSecret: [],
+
+      hub_id: 0,
+    }
+  }
+
+
   async syncL1() {
     const partners = Object.keys(this.Channels);
     //['0xf17f52151EbEF6C7334FAD080c5704D77216b732','0x821aEa9a577a9b44299B9c15c88cf3087F3b5544'];
     //Object.keys(Channels)
+
+    
 
     [
       this.sharedState.assets, 
@@ -162,15 +209,32 @@ export class Me {
       this.sharedState.currentUser,
       this.syncedChannels
     ] = await Promise.all([
-      this.L1.getAllAssets(),
-      this.L1.getAllHubs(), 
+      this.XLN.getAllAssets(),
+      this.XLN.getAllHubs(), 
       this.signer.getBalance(),
-      this.L1.getUser(this.signer.address), 
+      this.XLN.getUser(this.signer.address), 
 
-      this.L1.getChannels(this.signer.address, partners)
+      this.XLN.getChannels(this.signer.address, partners)
     ])
 
     this.sharedState.reserves = this.sharedState.currentUser.assets.map(r=>r.reserve.toString())
+
+    this.syncedChannels.map(gotCh=>{
+      
+      const ch = this.Channels[gotCh.partner]
+
+      ch.channel_counter = gotCh.channel.channel_counter.toNumber()
+      ch.cooperative_nonce = gotCh.channel.cooperative_nonce.toNumber()
+      ch.dispute_until_block = gotCh.channel.dispute_until_block.toNumber()
+
+      for (const assetId in gotCh.collaterals) {
+        if (ch.entries[assetId]) {
+          ch.entries[assetId].collateral = gotCh.collaterals[assetId].collateral.toNumber()
+          ch.entries[assetId].ondelta = gotCh.collaterals[assetId].ondelta.toNumber()
+        }
+      }
+
+    })
 
     //console.log('current', this.sharedState.currentUser.assets)
     //this.sharedState.currentUser[0]
@@ -273,6 +337,16 @@ export class Me {
     return (await this.sendSync(this.coordinator, {method:'getProfiles', addresses: [addr]}))[0]
   }
 
+  async hashAndSign(str: string) {
+    const hash = utils.arrayify(utils.keccak256(str))
+    return this.signer.signMessage(hash)
+  }
+
+  async hashAndVerify(str: string, sig: string) {
+    const hash = utils.arrayify(utils.keccak256(str))
+    return utils.verifyMessage(hash, sig)
+  }
+
   // a generic interface to send a websocket message
   send(addr:string, msg:any, optional_cb?:unknown) {
     msg.addr = this.signer.address
@@ -326,7 +400,17 @@ export class Me {
   sendSync(addr:string, msg:any) {
     return new Promise(async (resolve) => {
       msg.callback = crypto.randomBytes(32).toString('hex')
-      this.websocketCallbacks[addr+'_'+msg.callback] = resolve
+      const key = addr+'_'+msg.callback
+      this.websocketCallbacks[key] = resolve
+
+      setTimeout(()=>{
+        // fallback
+        const fn = this.websocketCallbacks[key]
+        if (fn) {
+          delete this.websocketCallbacks[key]  
+          fn(false)
+        }
+      }, 3000)
 
       this.send(addr, msg)
     })
@@ -593,19 +677,43 @@ export class Me {
 
   }
 
-  getCanonicalState(ch): string{
+  getCanonicalEntriesHash(ch): string{
     // offdelta is int and can be negative
-    const encodedEntries = this.ethers.utils.defaultAbiCoder.encode(
+    const encodedEntries = utils.defaultAbiCoder.encode(
       ['(uint,int,(uint,uint,bytes32)[],(uint,uint,bytes32)[])[]'], 
       [this.getCanonicalEntries(ch)]
       )
-    
-    return this.ethers.utils.defaultAbiCoder.encode(["uint", "bytes", "uint", "uint", "bytes32"], [
+
+    return utils.keccak256(encodedEntries)
+  }
+
+  getCanonicalDisputeProof(ch): string{
+    return utils.defaultAbiCoder.encode(["uint", "bytes", "uint", "uint", "bytes32"], [
       this.MessageType.DisputeProof,
       this.channelKey(this.signer.address, ch.partner),
       ch.channel_counter,
       ch.dispute_nonce,
-      this.ethers.utils.keccak256(encodedEntries),
+      this.getCanonicalEntriesHash(ch),
+    ])
+  }
+
+  getCooperativeProof(ch): string{
+    return utils.defaultAbiCoder.encode(["uint", "bytes", "uint", "uint", "(uint,int,(uint,uint,bytes32)[],(uint,uint,bytes32)[])[]"], [
+      this.MessageType.CooperativeProof,
+      this.channelKey(this.signer.address, ch.partner),
+      ch.channel_counter,
+      ch.cooperative_nonce,
+      this.getCanonicalEntries(ch),
+    ])
+  }
+
+  getWithdrawalProof(ch, pairs: Array<Array<number>>): string{
+    return utils.defaultAbiCoder.encode(["uint", "bytes", "uint", "uint", "(uint,uint)[]"], [
+      this.MessageType.WithdrawProof,
+      this.channelKey(this.signer.address, ch.partner),
+      ch.channel_counter,
+      ch.cooperative_nonce,
+      pairs,
     ])
   }
 
