@@ -47,7 +47,7 @@ async function main() {
   console.log('Loading ' + file)
 
   if (fs.existsSync(file)) {
-    console.log("reading config")
+    console.log("Reading config")
     me.Config = JSON.parse(fs.readFileSync(file).toString())
   } else {
     me.Config = {
@@ -61,9 +61,7 @@ async function main() {
   }
 
   console.log(me.Config)
-
-
-  
+ 
   if (me.argv.username && me.argv.password) {
     me.Config.seed = '0x'+(await require('./utils/derive')(me.argv.username, me.argv.password)).toString('hex')
   }

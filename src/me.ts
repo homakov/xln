@@ -349,7 +349,10 @@ export class Me {
 
   // a generic interface to send a websocket message
   send(addr:string, msg:any, optional_cb?:unknown) {
-    msg.addr = this.signer.address
+    if (this.signer){
+      msg.addr = this.signer.address
+    }
+
     msg.timestamp = new Date()
 
     msg = Buffer.from(JSON.stringify(msg))
