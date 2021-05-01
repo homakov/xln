@@ -6,7 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Datadirs with onchain/offchain db
-data/
+data*
 data????/
 
 # Build
