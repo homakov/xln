@@ -1,4 +1,12 @@
 /*
+Once in a while the hub must submit a rebalance batch onchain.
+Net-receivers request more collateral, so the hub needs to withdraw from net-senders.
+
+
+
+
+
+
 The most important job of the bank is to rebalance assets once in a while.
 1. the bank finds who wants to insure their uninsured balances. They can learn automatically (given soft limit) or manually (Request Insurance in the wallet)
 2. now the bank tries to find the total amount of insurance needed from the net-spenders who are currently online
@@ -16,17 +24,20 @@ General recommendations:
 1. assets stuck in a dispute is a waste. It's better to do everything by mutual agreement as much as possible, w/o suffering dispute delays and locked up liquidity
 2. the bank must store as little funds on their @onchain balances as possible. So once bank withdraw from net-spenders they should immediately deposit it to net-receiver.
 
+
+Four Security Tiers
+tier1 
+tier2 
+tier3 reserve-backed
+tier4 custodial
+
+
 */
 
-const withdraw = require('../offchain/withdraw')
 
 module.exports = async function () {
-  if (Config.pendingBatchHex || me.batch.length > 0) {
-    return //l('There are pending tx')
-  }
-
-  let deltas = await Channel.findAll()
-
+  
+  
   let current_rebalance_fee = Config.min_gasprice * 200
 
   for (let asset = 1; asset <= 2; asset++) {

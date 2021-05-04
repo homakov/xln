@@ -4,6 +4,16 @@ console.log('v', Vue)
 import Trend from 'vuetrend'
 Vue.use(Trend)
 
+
+Vue.component('bnav', {
+  data: function () {
+    return {}
+  },
+  template: `<li class="nav-item">
+      <a class="nav-link" @click="$parent.go(tab)" v-bind:class="[tab==$parent.tatb ? 'active' : '']">{{props.tab}} hsadf<slot/></a>
+    </li>`
+})
+
 import App from './App'
 
 window.jQuery = require('../assets/assets/js/vendor/jquery-slim.min.js')
@@ -160,7 +170,7 @@ window.render = (r) => {
   if (r.reload) {
     clearInterval(window.app.interval)
 
-    window.close()
+    //window.close()
 
     document.body.innerHTML = 'Reload requested'
     // only reload when the server is alive again
@@ -295,7 +305,7 @@ WebSocketClient.prototype.reconnect = function (e) {
   app.online = false
 
   // temporary, only for debug
-  window.close()
+  //window.close()
 
   var that = this
   setTimeout(function () {

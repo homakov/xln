@@ -33,7 +33,7 @@ echo "Generating with maxport $maxport"
 
 
 
-npx pm2 start $pm2_opts --name wallet yarn -- parcel serve wallet/index.html -p $wallet_port
+npx pm2 start $pm2_opts --name wallet npx -- parcel serve wallet/index.html -p $wallet_port
 
 xln_node_args="-p8433 --rebalance $global"
 npx pm2 start $pm2_opts --name xln8433 npx -- $xln_cluster_args $xln_node_args

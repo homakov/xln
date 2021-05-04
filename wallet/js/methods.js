@@ -410,7 +410,19 @@ module.exports = {
     }
   },
 
-  t: window.t,
+  t: (id)=>{
+    const tr = {
+      offchain: 'Pay',
+      withdraw: 'Withdraw',
+      deposit: 'Deposit',
+      requestWithdraw: 'Request Withdraw',
+      requestDeposit: 'Request Deposit',
+      credit: 'Set Credit',
+      coop: 'Cooperative Close',
+      dispute: 'Dispute Close'
+    }
+    return tr[id]
+  },
 
   toggle: () => {
     if (localStorage.settings) {

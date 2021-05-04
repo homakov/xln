@@ -144,7 +144,7 @@ export class Me {
       this.startExternalRPC(parseInt(myHub.uri.split(':')[2]))
 
       this.admin('reserveToChannel', {receiver: '0xf17f52151EbEF6C7334FAD080c5704D77216b732', partner: this.coordinator, pairs: [[0, 1000000]]})
-      this.admin('reserveToChannel', {receiver: '0x0d1d4e623D10F9FBA5Db95830F7d3839406C6AF2', partner: this.coordinator, pairs: [[0, 1000000]]})
+      this.admin('reserveToChannel', {receiver: '0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef', partner: this.coordinator, pairs: [[0, 1000000]]})
 
 
     } else {

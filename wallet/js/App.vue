@@ -47,7 +47,7 @@
 
  
 
-        <div class="alert alert-secondary" :key="ch.partner" v-for="ch in channels">
+        <div :key="ch.partner" v-for="ch in channels">
           <pre v-if="devmode">{{ch}}{{hubsForAddress}}</pre>
           <h1>
             {{ch.partner}}
@@ -113,6 +113,12 @@
 
           </table>
 
+
+          <ul class="nav nav-tabs">
+            <li class="nav-item" :key="id" v-for="id in ['offchain','credit','withdraw','deposit','requestWithdraw','requestDeposit','coop','dispute']">
+               <a class="nav-link" @click="go(id)" v-bind:class="[tab==id ? 'active' : '']">{{t(id)}}</a>
+            </li>
+          </ul>
 
 
             <select style="display:inline-block" v-model="addAssetId" class="custom-select custom-select-lg mb-6">
@@ -253,7 +259,6 @@
             <b v-else>(used)</b>
           </div>
 
-          <button class="btn btn-success" @click="devmode=!devmode">Toggle Devmode</button>
           <button class="btn btn-danger" @click="call('logout')">Logout</button>
         </template>
 
@@ -288,6 +293,9 @@
   (9) 0x8d5366123cb560bb606379f90a0bfd4769eecc0557f1b362dcae9012b548b1e5
         </pre>
      </form>      
+
+               <button class="btn btn-success" @click="devmode=!devmode">Toggle Devmode</button>
+
 
     </div>
     
