@@ -418,8 +418,7 @@ module.exports = {
       requestWithdraw: 'Request Withdraw',
       requestDeposit: 'Request Deposit',
       credit: 'Set Credit',
-      coop: 'Cooperative Close',
-      dispute: 'Dispute Close'
+      closeChannel: 'Close Channel'
     }
     return tr[id]
   },

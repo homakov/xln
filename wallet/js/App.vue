@@ -115,58 +115,29 @@
 
 
           <ul class="nav nav-tabs">
-            <li class="nav-item" :key="id" v-for="id in ['offchain','credit','withdraw','deposit','requestWithdraw','requestDeposit','coop','dispute']">
+            <li class="nav-item" :key="id" v-for="id in ['offchain','credit','withdraw','deposit','requestWithdraw','requestDeposit','closeChannel']">
                <a class="nav-link" @click="go(id)" v-bind:class="[tab==id ? 'active' : '']">{{t(id)}}</a>
             </li>
           </ul>
 
 
-            <select style="display:inline-block" v-model="addAssetId" class="custom-select custom-select-lg mb-6">
+            <select v-model="addAssetId" class="custom-select custom-select-lg mb-6">
               <option v-for="(a, index) in assets" v-bind:key="index" :value="index">{{addressToName(a[1])}}</option>
             </select> 
 
 
           <template v-if="ch.entries[addAssetId]">
-          <input v-model="withdrawAmount" placeholder="Amount to Withdraw"><a class="dotted" @click="withdrawAmount=ch.entries[addAssetId].secured">max</a>
-          <button class="btn btn-success" @click="call('channelToReserve', {partner: ch.partner, pairs: [[addAssetId, parseInt(withdrawAmount)]]})">Withdraw to Reserve</button>
-
           </template>
           <template v-else>
             <button  class="btn btn-success" @click="call('flushTransition', {address: ch.partner, type: 'addEntry', assetId: addAssetId})">Add Entry</button>
           </template>
 
 
-          <hr>
-          <button class="btn btn-success" @click="call('cooperativeClose', {partner: ch.partner})">Cooperative Close</button>
-
-
-          <span v-if="ch.dispute_until_block > 0">
-            <b>Blocks left until dispute resolution: {{ch.ins.dispute_delayed - K.usable_blocks}}</b>
-          </span>
-          <span v-else-if="ch.status=='dispute'">
-            Wait until your dispute tx is broadcasted
-          </span>
-          <button v-else class="btn btn-danger" @click="call('startDispute', {address: ch.partner})">Dispute Close</button>
-          
-          <p v-if="devmode">
-            Status: {{ch.status}}, nonce {{ch.dispute_nonce}}
-          </p>
         </div>
 
 
 
-
-        <ul class="nav nav-tabs">
-          <li class="nav-item">
-            <a class="nav-link" @click="go('offchain')" v-bind:class="[tab=='offchain' ? 'active' : '']">Pay Offchain</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" @click="go('reserveToChannel')" v-bind:class="[tab=='reserveToChannel' ? 'active' : '']">Deposit from Reserve</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" @click="go('settings')" v-bind:class="[tab=='settings' ? 'active' : '']">Settings</a>
-          </li>
-        </ul>
+ 
 
         <template v-if="tab=='offchain'">
 
@@ -220,7 +191,13 @@
             </tr>
           </table>
         </template>
-        <template v-else-if="tab=='reserveToChannel'">
+        <template v-else-if="tab=='withdraw'">
+
+            <input v-model="withdrawAmount" placeholder="Amount to Withdraw"><a class="dotted" @click="withdrawAmount=ch.entries[addAssetId].secured">max</a>
+            <button class="btn btn-success" @click="call('channelToReserve', {partner: ch.partner, pairs: [[addAssetId, parseInt(withdrawAmount)]]})">Withdraw to Reserve</button>
+
+        </template>
+        <template v-else-if="tab=='deposit'">
 
             <div class="input-group" style="width:300px">
               <input type="text" class="form-control small-input" v-model="newPayment.address" :disabled="['none','amount'].includes(newPayment.editable)" placeholder="Address" aria-describedby="basic-addon2" @input="updateRoutes"> &nbsp;
@@ -251,6 +228,18 @@
               <button type="button" class="btn btn-outline-success" @click="addExternalDeposit">Transfer 🌐</button>
             </div> 
         </template>
+        <template v-else-if="tab=='closeChannel'">
+
+          <hr>
+          <button class="btn btn-success" @click="call('cooperativeClose', {partner: ch.partner})">Cooperative Close</button>
+          <hr>
+
+          <button class="btn btn-danger" @click="call('startDispute', {address: ch.partner})">Dispute Close</button>
+          
+          <p v-if="devmode">
+            Status: {{ch.status}}, nonce {{ch.dispute_nonce}}
+          </p>
+        </template>
         <template v-else-if="tab=='settings'">
 
           <div :key="h[0]" v-for="h in hubs.slice(1)">
@@ -268,6 +257,7 @@
 
 
       </template>
+
       <form v-else class="form-signin" v-on:submit.prevent="call('login',{username, password})">
 
         <h4 class="danger danger-primary">Your private key is derived from your username and password. Don't forget the password - it cannot be recovered.</h4>
@@ -294,7 +284,7 @@
         </pre>
      </form>      
 
-               <button class="btn btn-success" @click="devmode=!devmode">Toggle Devmode</button>
+               <br><br><button class="btn btn-success" @click="devmode=!devmode">Toggle Devmode</button>
 
 
     </div>

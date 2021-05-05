@@ -112,6 +112,6 @@ module.exports = {
   hardfork: '',
 
   // useful for visual debugging
-  devmode: true,
+  devmode: false,
   sync_started_at: false,
 }
