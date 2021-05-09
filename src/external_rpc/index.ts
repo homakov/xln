@@ -48,6 +48,21 @@ module.exports = async function external_rpc(ws, msg) {
       const sig = await this.hashAndSign(proof)
 
       this.send(json.addr, {method: 'callback', callback: json.callback, data: sig})
+    } else if (json.method == 'createOrder') {
+
+      this.Orderbook.push(json.order)
+
+
+
+      Object.keys(this.websockets).forEach(addr=>{
+        this.send(addr, {
+          orderbook: this.Orderbook
+        })
+      })
+
+      
+
+
 
     } else if (json.method == 'getWithdrawalSig') {
 
@@ -101,6 +116,22 @@ module.exports = async function external_rpc(ws, msg) {
 
     } else if (json.method == 'setCreditLimit') {
       this.Channels[addr].entries[json.assetId].they_credit_limit = json.credit_limit
+
+    } else if (json.method == 'requestCollateral') {
+      const ch = this.Channels[addr]
+      const entry = ch.entries[json.assetId]
+      if (json.collateral > entry.collateral) {
+        console.log("Before/after", entry.collateral, json.collateral)
+        const diff = json.collateral - entry.collateral
+        const derived = this.deriveEntry(ch, json.assetId)
+        if (diff <= derived.they_unsecured) {
+          entry.they_requested_deposit = diff
+        } else {
+          console.log("They request too much")
+        }
+      } else if (json.collateral < entry.collateral) {
+        console.log("They requested withdrawal")
+      }
 
     } else if (json.method == 'textMessage') {
       this.react({confirm: json.msg})

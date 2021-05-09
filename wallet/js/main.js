@@ -25,7 +25,7 @@ window.Tour = require('./shepherd.min.js')
 window.l = console.log
 window.ts = () => Math.round(new Date() / 1000)
 
-document.title = 'Fair ' + location.port
+document.title = 'XLN ' + location.port
 
 window.hashargs = location.hash
   ? location.hash
@@ -40,11 +40,11 @@ window.hashargs = location.hash
 
 if (hashargs.auth_code) {
   localStorage.auth_code = hashargs.auth_code.replace(/[^a-z0-9]/g, '')
-  history.replaceState(null, null, '/#wallet')
+  history.replaceState(null, null, '/#offchain')
 }
 
 if (opener) {
-  // let the opener know this machine has fair installed
+  // let the opener know this machine has xln installed
   opener.postMessage({status: 'loaded'}, '*')
 }
 
@@ -176,7 +176,7 @@ window.render = (r) => {
     // only reload when the server is alive again
     setInterval(() => {
       fetch('/').then((r) => {
-        location.reload()
+        //location.reload()
       })
     }, 1000)
     return false
@@ -222,6 +222,8 @@ window.render = (r) => {
     }
   }
 
+  //if (r.consoleLog) window.app.consoleLog += "\n\n"+r.consoleLog
+
   Object.assign(window.app, r)
   window.app.$forceUpdate()
 
@@ -231,16 +233,18 @@ window.render = (r) => {
   // go add banks if logged in & no channels exist
   if (
     firstLoad &&
-    app.pubkey &&
+    app.address &&
     app.tab == 'offchain' &&
     app.channels.length == 0
   ) {
-    app.go('settings')
+    //app.go('settings')
   }
+  
+  
 
-  if (r.history && window.riskcanvas) {
+  /*if (r.history && window.riskcanvas) {
     renderRisk(r.history)
-  }
+  }*/
 }
 
 function WebSocketClient() {

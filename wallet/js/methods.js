@@ -162,10 +162,6 @@ module.exports = {
   },
 
   call: function (method, args = {}) {
-    if (method == 'vote') {
-      args.rationale = prompt('Why?')
-      if (!args.rationale) return false
-    }
 
     FS(method, args).then(render)
     return false
@@ -229,6 +225,13 @@ module.exports = {
     return t[address] ? t[address] : address
   },
 
+  choosePartner: ()=>{
+    const addr = app.chosenPartner
+    localStorage.chosenPartner = addr
+    app.ch = app.channels[addr]
+
+  },
+
   
 
   showGraph: () => {
@@ -249,11 +252,11 @@ module.exports = {
 
     //if (authed.includes(path) && !localStorage.auth_code) path = ''
 
-    if (path == '') {
-      history.pushState('/', null, '/')
-    } else {
-      location.hash = '#' + path
-    }
+    //if (path == '') {
+      //history.pushState('/', null, '/')
+    //} else {
+    location.hash = '#' + path
+    //}
 
     app.tab = path
   },
@@ -413,12 +416,15 @@ module.exports = {
   t: (id)=>{
     const tr = {
       offchain: 'Pay',
+      configure: 'Configure',
       withdraw: 'Withdraw',
       deposit: 'Deposit',
       requestWithdraw: 'Request Withdraw',
       requestDeposit: 'Request Deposit',
-      credit: 'Set Credit',
-      closeChannel: 'Close Channel'
+      credit: 'Credit',
+      closeChannel: 'Close Channel',
+      settings: 'Settings',
+      swap: 'Swap'
     }
     return tr[id]
   },

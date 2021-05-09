@@ -52,9 +52,9 @@ export class Me {
 
 
   
-  record: unknown
+  record: any
   datadir: string
-  argv: unknown
+  argv: any
   external_http_server: http.Server
   external_wss: any
 
@@ -76,8 +76,11 @@ export class Me {
   websockets = {}
   websocketCallbacks = {}
   Profiles = {}
+  Orderbook = []
 
+  
   browsers = []
+  
 
   busyPorts = [] // for cloud demos
 
@@ -133,8 +136,9 @@ export class Me {
     
     await this.syncL1()
 
+    setInterval(()=>{this.syncL1()}, 2000)
 
-    setInterval(()=>{this.syncL1()}, 3000)
+
 
     
 
@@ -143,17 +147,17 @@ export class Me {
     if (myHub) {
       this.startExternalRPC(parseInt(myHub.uri.split(':')[2]))
 
-      this.admin('reserveToChannel', {receiver: '0xf17f52151EbEF6C7334FAD080c5704D77216b732', partner: this.coordinator, pairs: [[0, 1000000]]})
-      this.admin('reserveToChannel', {receiver: '0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef', partner: this.coordinator, pairs: [[0, 1000000]]})
+      this.admin('reserveToChannel', {receiver: '0xf17f52151EbEF6C7334FAD080c5704D77216b732', partner: this.coordinator, pairs: [[0, 10000]]})
+      this.admin('reserveToChannel', {receiver: '0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef', partner: this.coordinator, pairs: [[0, 10000]]})
 
-
-    } else {
+      setInterval(()=>{this.rebalanceChannels()}, 5000)
+    } else if (this.argv.p <= 8002) {
       setTimeout(async ()=>{
         this.admin('openChannel', {address: this.coordinator})
         await this.sleep(200)
         this.admin('flushTransition', {address: this.coordinator, assetId: 0})
         await this.sleep(200)
-        this.admin('setCreditLimit', {method: 'setCreditLimit', partner: this.coordinator, assetId: 0, credit_limit: 1000000})
+        this.admin('setCreditLimit', {method: 'setCreditLimit', partner: this.coordinator, assetId: 0, credit_limit: 10000})
 
 
       },2000)
@@ -192,6 +196,23 @@ export class Me {
 
       hub_id: 0,
     }
+  }
+
+  async broadcastBatch(){
+    if (Object.values(this.sharedState.batch).join('') == '0') return
+
+    console.log("Broadcasting batch ",this.sharedState.batch)
+    try {
+      const tx = await this.XLN.processBatch(this.sharedState.batch,  {
+        gasLimit: 5000000
+      })
+          
+      console.log(this.sharedState.receipt = await tx.wait())
+      this.sharedState.logEvents = this.sharedState.receipt.events.map(e=>`${e.args[0]} ${e.args[1].toString()}`)
+      this.sharedState.batch = this.getEmptyBatch()
+    }catch(e){console.log("err ", e)}
+
+    this.react({confirm: "Batch broadcasted"})
   }
 
 
@@ -490,6 +511,8 @@ export class Me {
       ondelta: 0,
   
       offdelta: 0,
+
+      they_requested_deposit: 0,
    
   
       pending_withdraw: 0,
@@ -647,33 +670,36 @@ export class Me {
     const stateEntries = []
 
     for (const e of (<any>Object).values(ch.entries)) {
-      if (['AddEntryNew', 
-      'DeleteEntrySent', 
-      'DeleteEntryAck'].includes(e.type)) continue
+      if (!['AddEntrySent','AddEntryAck','DeleteEntryNew'].includes(e.type)) continue
 
-
-      // asset_id, offdelta, left_locks, right_locks
       const left_locks = []
       const right_locks = []
+      let offdelta = e.offdelta
 
       for (const t of ch.locks) {
-        // omit
-        if ([
-          'AddLockNew',
-          'DeleteLockSent',
-          'DeleteLockAck'
-        ].includes(t.type)) continue
 
-        if (ch.isLeft ^ t.inbound) {
-          left_locks.push([t.amount, t.exp, t.hash])
-        } else {
-          right_locks.push([t.amount, t.exp, t.hash])
+
+        // lock is still in state
+        if ([
+          'AddLockSent',
+          'AddLockAck',
+          'DeleteLockNew'
+        ].includes(t.type)) {
+          if (ch.isLeft ^ t.inbound) {
+            left_locks.push([t.amount, t.exp, t.hash])
+          } else {
+            right_locks.push([t.amount, t.exp, t.hash])
+          }
+        }
+
+
+        if (t.type == 'DeleteLockSent' && t.outcomeType == 'secret') {
+          offdelta += (ch.isLeft ^ t.inbound) ? -t.amount : t.amount
         }
       }
 
-
-
-      stateEntries.push([e.assetId, e.offdelta, left_locks, right_locks])
+      // asset_id, offdelta, left_locks, right_locks
+      stateEntries.push([e.assetId, offdelta, left_locks, right_locks])
     }
 
     return stateEntries
@@ -728,6 +754,7 @@ export class Me {
   payChannel = require('./offchain/pay_channel')
   flushChannel = require('./offchain/flush_channel')
   updateChannel = require('./offchain/update_channel')
+  rebalanceChannels = require('./offchain/rebalance_channels')
   
 }
 

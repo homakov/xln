@@ -13,14 +13,35 @@ import {Me} from './me' //= require('./me')
 
 
 
-
 async function main() {
 
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const me:any = new Me()
 
+  /*
+  const _originalConsoleLog = console.log;
+  console.log = function() {
+     // Invoke the original method with an additional parameter
+    _originalConsoleLog.apply(console, 
+                [(new Date().toString())].concat([].slice.call(arguments))
+              );
 
+
+    try {
+      const data = JSON.stringify({consoleLog: arguments})
+      me.browsers.map((ws) => {
+        if (ws.readyState == 1) {
+          ws.send(data)
+        }
+      })
+    } catch (e) {
+      //console.log(e)
+    }
+  }; 
+  */
+  
+  
   //me.web3 = new Web3('http://127.0.0.1:8545')
   //console.log(me.web3.givenProvider)
 

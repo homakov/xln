@@ -16,6 +16,28 @@ function swapType(array, fromType, toType) {
   });
 }
 
+function ackChannel(ch){
+  swapType(Object.values(ch.entries), 'AddEntrySent', 'AddEntryAck')
+  swapType(Object.values(ch.entries), 'DeleteEntrySent', 'DeleteEntryAck')
+  swapType(Object.values(ch.locks), 'AddLockSent', 'AddLockAck')
+
+  //apply locks before deletion 
+  Object.keys(ch.locks).forEach(id=>{
+    const t = ch.locks[id]
+    if (t.type == 'DeleteLockSent') {
+      if (t.outcomeType == 'secret') {
+        // apply the locks before deleting
+        ch.entries[t.assetId].offdelta += (ch.isLeft ^ t.inbound) ? -t.amount : t.amount
+      }
+
+      t.type = 'DeleteLockAck'
+
+      //ch.locks.splice(id,1)
+
+    }       
+  })
+}
+
 
 module.exports = async function (
   addr: string,
@@ -41,7 +63,7 @@ module.exports = async function (
 
   const ch = this.Channels[json.addr]
 
-  //await this.sleep(500)
+  //await this.sleep(5000)
 
   
   ch.last_used = new Date()
@@ -69,12 +91,15 @@ module.exports = async function (
       // we must store latest dispute proof signature
       ch.ackSig = json.ackSig
       ch.ackRequestedAt = 0
-        
+      
+      /*
       swapType(Object.values(ch.entries), 'AddEntrySent', 'AddEntryAck')
       swapType(Object.values(ch.entries), 'DeleteEntrySent', 'DeleteEntryAck')
 
       swapType(Object.values(ch.locks), 'AddLockSent', 'AddLockAck')
-      swapType(Object.values(ch.locks), 'DeleteLockSent', 'DeleteLockAck')
+      swapType(Object.values(ch.locks), 'DeleteLockSent', 'DeleteLockAck')*/
+      
+      ackChannel(ch)
     } else {
       console.log("Invalid signer for ackSig", signer, this.getCanonicalDisputeProof(ch), 'vs ', json.ackState)
     }
@@ -85,11 +110,29 @@ module.exports = async function (
     if (ch.isLeft) {
       // ignoring this request. there is no point in storing ackSig 
       // right user will have higher dispute_nonce+1 anyway
+      console.log("rollback: ignore as left user")
       return
     } else if (json.dispute_nonce == ch.dispute_nonce - 1) {
       // rollback to previous state, apply their transitions, 
       // then flush and re-apply our transitions
-      
+      console.log("Starting rollback as right user (we got higher nonce)")
+
+      swapType(Object.values(ch.entries), 'AddEntrySent', 'AddEntryNew')
+      swapType(Object.values(ch.entries), 'DeleteEntrySent', 'DeleteEntryNew')
+
+      swapType(Object.values(ch.locks), 'AddLockSent', 'AddLockNew')
+      swapType(Object.values(ch.locks), 'DeleteLockSent', 'DeleteLockNew')
+      const signer = await this.hashAndVerify(this.getCanonicalDisputeProof(ch), json.ackSig)
+
+      if (addr != signer) {
+
+        console.log("FATAL error: didn't manage to rollback")
+        return
+
+      } else {
+        console.log("rollback went fine")
+      }
+  
 
     } else {
       console.log("Invalid dispute_nonce in rollback")
@@ -178,9 +221,12 @@ module.exports = async function (
 
         if (boxData.secret && utils.keccak256(Buffer.from(boxData.secret,'hex')) == t.hash) {
           console.log("good secret")
+
+          this.react({confirm:"Payment confirmed"})
           inboundLock.outcome = boxData.secret
           inboundLock.outcomeType = 'secret'
         } else {
+          this.react({alert:"Payment failed"})
           inboundLock.outcomeType = 'invalid'
         }
 
@@ -211,8 +257,16 @@ module.exports = async function (
 
       if (t.outcomeType == 'secret' && utils.keccak256(Buffer.from(t.outcome,'hex')) == outboundLock.hash) {
         // received valid preimage, apply the lock to offdelta
-        ch.entries[t.assetId].offdelta += ch.isLeft ? -outboundLock.amount : outboundLock.amount
+        outboundLock.outcomeType = t.outcomeType
+        outboundLock.outcome = t.outcome
+
+        if (!outboundLock.inboundAddress)
+        this.react({confirm:"Payment confirmed"})
       } else {
+        outboundLock.outcomeType = 'fail'
+
+        if (!outboundLock.inboundAddress)
+        this.react({alert:"Payment failed"})
         // lock is not applied
       }
 
@@ -223,9 +277,11 @@ module.exports = async function (
 
         console.log('found ', inboundLock, this.Channels[outboundLock.inboundAddress].locks)
 
+        // pass the same unlocked method down the route (either secret or fail)
+
         inboundLock.type = 'DeleteLockNew'
-        inboundLock.outcome = t.outcome
-        inboundLock.outcomeType = t.outcomeType
+        inboundLock.outcome = outboundLock.outcome
+        inboundLock.outcomeType = outboundLock.outcomeType
 
         if (!flushable.includes(outboundLock.inboundAddress)) {
           flushable.push(outboundLock.inboundAddress)
@@ -246,13 +302,13 @@ module.exports = async function (
     const signer = await this.hashAndVerify(this.getCanonicalDisputeProof(ch), json.finalSig)
     if (signer == addr) {
 
-      swapType(Object.values(ch.entries), 'AddEntrySent', 'AddEntryAck')
-      swapType(Object.values(ch.entries), 'DeleteEntrySent', 'DeleteEntryAck')
-      swapType(Object.values(ch.locks), 'AddLockSent', 'AddLockAck')
-      swapType(Object.values(ch.locks), 'DeleteLockSent', 'DeleteLockAck')
+      ackChannel(ch)
+
+
+      //swapType(Object.values(ch.locks), 'DeleteLockSent', 'DeleteLockAck')
       
     } else {
-      console.log('rollback everything - the finalSig is not valid',json.finalEntries, this.getCanonicalEntries(ch))
+      console.log('rollback everything - the finalSig is not valid', JSON.stringify([json.finalProof, this.getCanonicalDisputeProof(ch), json.finalEntries, this.getCanonicalEntries(ch)]))
 
       // delete all newly created locks with splice
       ch.locks.splice(originalLocksLength)
@@ -267,10 +323,12 @@ module.exports = async function (
         }
       })
 
+      /*
       swapType(Object.values(ch.entries), 'AddEntrySent', 'AddEntryAck')
       swapType(Object.values(ch.entries), 'DeleteEntrySent', 'DeleteEntryAck')
       swapType(Object.values(ch.locks), 'AddLockSent', 'AddLockAck')
       swapType(Object.values(ch.locks), 'DeleteLockSent', 'DeleteLockAck')
+      */
       
     }
 
@@ -413,7 +471,7 @@ module.exports = async function (
   // if finalSig is valid, swap sent->ack, otherwise REVERT
 
 
-  this.react({confirm: 'updateChannel'})
+  this.react({})
 
     /*
   We MUST ack if there were any transitions, otherwise if it was ack w/o transitions

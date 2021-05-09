@@ -42,15 +42,19 @@
       <template v-if="address">
 
         <p style="word-wrap: break-word">Your address: <b>{{address}}</b></p>
-        <h4>EOA balance: {{EOA_balance}}</h4>
+        <h4 @dblclick="devmode=!devmode">EOA balance: {{EOA_balance}}</h4>
         <h4 v-bind:key="'reserve'+index" v-for="(r,index) in reserves" v-if="r!='0'">{{addressToName(assets[index][1])}} balance: {{r}}</h4>
 
  
+        <template v-if="channels.length > 0">
+        <select v-model="chosenPartner" @input="choosePartner" class="custom-select custom-select-lg mb-6">
+          <option v-for="(ch,index) in channels" v-bind:key="index" :value="index">{{addressToName(ch.partner)}}</option>
+        </select> 
 
-        <div :key="ch.partner" v-for="ch in channels">
+        <div v-for="ch in [channels[chosenPartner]]">
           <pre v-if="devmode">{{ch}}{{hubsForAddress}}</pre>
           <h1>
-            {{ch.partner}}
+            {{addressToName(ch.partner)}} 
           </h1>
           
 
@@ -58,55 +62,32 @@
             <thead  class="thead-dark">
               <tr>
                 <th>Asset</th>
-                <th>Outbound</th>
+                <th>Outbound Capacity</th>
                 <th>Secured</th>
                 <th>Unsecured</th>
                 <th>Credit Limit</th>
-                <th>Inbound</th>
+                <th>Inbound Capacity</th>
               </tr>  
             </thead>
 
             <tbody>
 
-            <template  v-for="assetId in Object.keys(ch.entries)">
+            <template v-for="i in Object.keys(ch.entries)">
               <tr>
-
-
-                  <td>{{addressToName(assets[assetId][1])}}</td>
-                  <td>{{ch.derived[assetId].outbound_capacity}}</td>
-                  <td>{{ch.derived[assetId].secured}}</td>
-                  <td>{{ch.derived[assetId].unsecured}} Request Collateral</td>
-                  <td><input @change="call('setCreditLimit', {method: 'setCreditLimit', partner: ch.partner, assetId: assetId, credit_limit: parseInt(prefill[ch.partner+assetId].credit_limit)})" type="text" class="form-control" v-model="prefill[ch.partner+assetId].credit_limit"></td>
-                  <td>{{ch.derived[assetId].inbound_capacity}}</td>
+                  <td>{{addressToName(assets[i][1])}}</td>
+                  <td><b>{{ch.derived[i].outbound_capacity}}</b></td>
+                  <td>{{ch.derived[i].secured}}</td>
+                  <td>{{ch.derived[i].unsecured}}</td>
+                  <td>{{ch.entries[i].credit_limit}}</td>
+                  <td><b>{{ch.derived[i].inbound_capacity}}</b></td>
               </tr>
                 
-              <tr><td colspan="99">                 
-              <visual-channel :derived="ch.derived[assetId]" :max_visual_capacity="max_visual_capacity[assetId]" :commy="commy"></visual-channel>
-                </td></tr>
+              <tr>
+                <td colspan="99">                 
+                  <visual-channel :derived="ch.derived[i]" :max_visual_capacity="max_visual_capacity[i]" :commy="commy"></visual-channel>
+                </td>
+              </tr>
 
-
-<!--
-
-
-
-              <h5><a class="dotted" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), acceptable_rebalance: subch.acceptable_rebalance}">{{toTicker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}}{{elaborateAvailable(ch.derived[subch.asset])}}</a></h5>
-
-
-
-
-              <span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: ch.d.they_pubkey, method: 'testnet', action: 'faucet', assetId: subch.asset, amount: 10000 })">Faucet</span>
-
-
-              <span v-if="subch.requested_insurance || (subch.acceptable_rebalance > 0 && ch.derived[subch.asset].uninsured >= subch.acceptable_rebalance)"  class="badge badge-success">Await Insurance <dotsloader ></dotsloader>
-              </span>
-              <span v-else-if="ch.derived[subch.asset].uninsured>0" class="badge badge-success" @click="requestInsurance(ch, subch.asset)">Request Insurance</span>
-              
-              <span v-if="subch.withdrawal_sig" class="badge badge-success">Pending withdrawal</span>
-              <span v-else-if="record" class="badge badge-success" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {they_pubkey: ch.d.they_pubkey, assetId: subch.asset, method: 'withdraw', amount: uncommy(a)})};">Withdraw to Onchain</span>
-
-              <span v-if="record" class="badge badge-success" @click="newPayment.address=address;updateRoutes();newPayment.type='onchain';newPayment.asset=subch.asset;newPayment.bank = ch.partner;">Deposit from Onchain</span>
-            
-            -->
             </template>
               </tbody>
 
@@ -114,141 +95,175 @@
           </table>
 
 
-          <ul class="nav nav-tabs">
-            <li class="nav-item" :key="id" v-for="id in ['offchain','credit','withdraw','deposit','requestWithdraw','requestDeposit','closeChannel']">
+          <p><ul class="nav nav-tabs">
+            <li class="nav-item" :key="id" v-for="id in ['offchain','configure','closeChannel', 'settings']">
                <a class="nav-link" @click="go(id)" v-bind:class="[tab==id ? 'active' : '']">{{t(id)}}</a>
             </li>
-          </ul>
+          </ul></p>
+
+          <form style="width: 600px">
+
+    
+
+            <template v-if="tab=='offchain'">
 
 
-            <select v-model="addAssetId" class="custom-select custom-select-lg mb-6">
-              <option v-for="(a, index) in assets" v-bind:key="index" :value="index">{{addressToName(a[1])}}</option>
-            </select> 
+              <div class="form-group">
+                <p>
+                  <label>Address</label>
+                  <input type="text" class="form-control " v-model="newPayment.address" :disabled="['none','amount'].includes(newPayment.editable)" placeholder="Address"  @input="updateRoutes">
+                </p>
 
 
-          <template v-if="ch.entries[addAssetId]">
-          </template>
-          <template v-else>
-            <button  class="btn btn-success" @click="call('flushTransition', {address: ch.partner, type: 'addEntry', assetId: addAssetId})">Add Entry</button>
-          </template>
+                  <label>Asset</label>
+
+
+                <p><select @input="updateRoutes" v-model="newPayment.assetId" class="form-control ">
+                  <option v-for="(a, index) in assets" :value="index">{{addressToName(a[1])}}</option>
+                </select></p>
+
+                  <label>Amount</label>
+
+                <input type="text" class="form-control small-input" v-model="newPayment.amount" :disabled="newPayment.editable=='none'" placeholder="Amount" aria-describedby="basic-addon2" @input="updateRoutes">
+              </div>
+
+              <template v-if="newPayment.address.length > 0">
+                <p v-if="bestRoutes.length == 0">
+                  No route found, try onchain.
+                </p>
+                <template v-else>
+                  <h5>Choose route/fee:</h5>
+                  <div class="radio" v-for="(r, index) in bestRoutes.slice(0, bestRoutesLimit)">
+                    <label>
+                      <input type="radio" :value="r[1].join('_')" v-model="chosenRoute"> {{routeToText(r)}} (<b>{{r[0].toFixed(3)}}</b>) </label>
+                  </div>
+                  <p v-if="bestRoutes.length > bestRoutesLimit"><a class="dotted" @click="bestRoutesLimit += 5">Show More Routes</a></p>
+                </template>
+              </template>
+              
+              <button type="button" class="btn btn-outline-success pay-now" @click="call('payChannel', {address: newPayment.address, assetId: newPayment.assetId, amount: newPayment.amount, chosenRoute: chosenRoute.split('_')});">Pay Offchain</button>
+
+
+
+              <table v-if="payments.length > 0" class="table">
+
+
+                <transition-group name="list" tag="tbody">
+                  <tr v-bind:key="h.id" v-for="(h, index) in payments.slice(0, history_limit)">
+                    <td width="10%" v-html="skipDate(h, index)"></td>
+                    <td width="50%" @click="addr=(h.is_inward ? h.source_address : h.destination_address);if (addr){newPayment.address=addr+'#'+h.private_invoice; newPayment.amount=commy(h.amount);newPayment.asset = h.asset;}"><u class="dotted">{{paymentToDetails(h)}}</u>: {{h.invoice}} via {{toUser(channels.find(ch=>ch.d.id==h.channelId).partner)}}</td>
+
+
+                    <td width="15%"><span v-bind:class="['badge', h.is_inward ? 'badge-success' : 'badge-danger']">{{h.is_inward ? '+'+commy(h.amount) : commy(-h.amount)}} {{toTicker(h.asset)}}</span> {{paymentStatus(h)}}</td>
+                    <td>{{commy(h.resulting_balance)}}</td>
+                  </tr>
+                </transition-group>
+                <tr v-if="payments.length > history_limit">
+                  <td colspan="7" align="center"><a @click="history_limit += 20">Show More</a></td>
+                </tr>
+              </table>
+            </template>
+            <template v-else-if="tab=='configure'">
+
+
+            <div class="form-group">
+
+              <h5>Asset to configure</h5>
+
+              <p><select v-model="assetId" class="form-control custom-select custom-select-lg mb-6">
+                <option v-for="(a, index) in assets" v-bind:key="index" :value="index">{{addressToName(a[1])}}</option>
+              </select></p>
+
+
+
+
+            <template v-if="ch.entries[assetId]">
+              <small class="form-text text-muted">All operations below will be applied to this specific asset inside the channel.</small>
+
+              <h5>Set credit limit</h5>
+                <input type="text" class="form-control" v-model="creditLimit" placeholder="New credit limit">
+                <small class="form-text text-muted">Current credit limit to this hub is {{ch.entries[assetId].credit_limit}}. It defines your maximum unsecured balance and increases your inbound capacity.</small>
+                <p>
+                <button class="btn btn-outline-primary"  @click="call('setCreditLimit', {method: 'setCreditLimit', partner: ch.partner, assetId: assetId, credit_limit: parseInt(creditLimit)})" >Set Credit</button>
+                </p>
+
+
+              <h5>Request Collateral Size</h5>
+              <p><input  class="form-control" v-model="requestCollateral" placeholder="Choose collateral"> <a class="dotted" @click="requestCollateral=ch.derived[assetId].unsecured + ch.entries[assetId].collateral">max</a></p>
+
+              <small class="form-text text-muted">Current collateral is {{ch.entries[assetId].collateral}}. You can request the hub to <b>increase collateral and collateralize your unsecured balance</b>, or <b>decrease it to get more interest on your unsecured balance.</b></small>
+
+              <p> 
+              <button class="btn btn-outline-primary" @click="call('requestCollateral', {partner: ch.partner, method:'requestCollateral', assetId: assetId, collateral: parseInt(requestCollateral)})">Request Collateral</button>
+              </p>
+
+              <h5>Withdraw</h5>
+              <input class="form-control" v-model="withdrawAmount" placeholder="Amount to Withdraw"> <a class="dotted" @click="withdrawAmount=ch.derived[assetId].secured">max</a>
+              <small class="form-text text-muted">Request withdrawal proof from the hub for this amount. Assets will be moved from channel collateral (up to your current secured balance) to your reserve balance</small>
+              <p>
+              <button class="btn btn-outline-primary" @click="call('channelToReserve', {partner: ch.partner, pairs: [[assetId, parseInt(withdrawAmount)]]})">Withdraw to Reserve</button>
+              </p>
+
+              <h5>Deposit</h5>
+              <input  class="form-control" v-model="depositAmount" placeholder="Amount to Deposit"> <a class="dotted" @click="depositAmount=reserves[assetId]">max</a>
+              <small class="form-text text-muted">Deposit collateral from your reserve balance to this channel. This will increase your outbound capacity.</small>
+              <p>
+              <button class="btn btn-outline-primary" @click="call('reserveToChannel', {partner: ch.partner, pairs: [[assetId, parseInt(withdrawAmount)]]})">Deposit from Reserve</button>
+              </p>
+
+
+
+
+            </template>
+            <template v-else>
+              <p>
+                <button  class="btn btn-outline-primary" @click="call('flushTransition', {address: ch.partner, type: 'addEntry', assetId: assetId})">Use Asset</button>
+              </p>
+            </template>
+
+
+
+
+
+              </div>
+
+
+            </template>
+            <template v-else-if="tab=='closeChannel'">
+
+              <p>Cooperative close will instantly return all secured balances from the channel to your reserves. <b>Unsecured balances are not guaranteed</b>: the smart contract attempts to take them from reserves of the hub, or enforces as debts.</p>
+              <button class="btn btn-success" @click="call('cooperativeClose', {partner: ch.partner})">Cooperative Close</button>
+              <hr>
+              <p>Dispute close requires a long delay, only use it in case the hub doesn't cooperate.</p>
+              <button class="btn btn-danger" @click="call('startDispute', {address: ch.partner})">Dispute Close</button>
+              
+            </template>
+            <!--<template v-else-if="tab=='swap'">
+              
+              
+              <p><select  v-model="swapFrom" class="form-control ">
+                <option v-for="(a, index) in assets" :value="index">{{addressToName(a[1])}}</option>
+              </select></p>
+
+
+            </template>-->
+
+          </form>
 
 
         </div>
-
-
-
- 
-
-        <template v-if="tab=='offchain'">
-
-
-          <div class="input-group" style="width:300px">
-            <input type="text" class="form-control small-input" v-model="newPayment.address" :disabled="['none','amount'].includes(newPayment.editable)" placeholder="Address" aria-describedby="basic-addon2" @input="updateRoutes"> 
-            &nbsp;
-          </div>
-            
-
-          <div class="input-group" style="width:300px">
-            <input type="text" class="form-control small-input" v-model="newPayment.amount" :disabled="newPayment.editable=='none'" placeholder="Amount" aria-describedby="basic-addon2" @input="updateRoutes">
-            <select @input="updateRoutes" style="display:inline-block" v-model="newPayment.assetId" class="custom-select custom-select-lg mb-6">
-              <option v-for="(a, index) in assets" :value="index">{{addressToName(a[1])}}</option>
-            </select>
-          </div>
-
-          <template v-if="newPayment.address.length > 0">
-            <p v-if="bestRoutes.length == 0">
-              No route found, try onchain.
-            </p>
-            <template v-else>
-              <h5>Choose route/fee:</h5>
-              <div class="radio" v-for="(r, index) in bestRoutes.slice(0, bestRoutesLimit)">
-                <label>
-                  <input type="radio" :value="r[1].join('_')" v-model="chosenRoute"> {{routeToText(r)}} (<b>{{r[0].toFixed(3)}}</b>) </label>
-              </div>
-              <p v-if="bestRoutes.length > bestRoutesLimit"><a class="dotted" @click="bestRoutesLimit += 5">Show More Routes</a></p>
-            </template>
-          </template>
-          
-          <button type="button" class="btn btn-outline-success pay-now" @click="call('payChannel', {address: newPayment.address, assetId: newPayment.assetId, amount: newPayment.amount, chosenRoute: chosenRoute.split('_')});">Pay ⚡️</button>
-
-
-
-          <table v-if="payments.length > 0" class="table">
-
-
-            <transition-group name="list" tag="tbody">
-              <tr v-bind:key="h.id" v-for="(h, index) in payments.slice(0, history_limit)">
-                <td width="10%" v-html="skipDate(h, index)"></td>
-                <td width="50%" @click="addr=(h.is_inward ? h.source_address : h.destination_address);if (addr){newPayment.address=addr+'#'+h.private_invoice; newPayment.amount=commy(h.amount);newPayment.asset = h.asset;}"><u class="dotted">{{paymentToDetails(h)}}</u>: {{h.invoice}} via {{toUser(channels.find(ch=>ch.d.id==h.channelId).partner)}}</td>
-
-
-                <td width="15%"><span v-bind:class="['badge', h.is_inward ? 'badge-success' : 'badge-danger']">{{h.is_inward ? '+'+commy(h.amount) : commy(-h.amount)}} {{toTicker(h.asset)}}</span> {{paymentStatus(h)}}</td>
-                <td>{{commy(h.resulting_balance)}}</td>
-              </tr>
-            </transition-group>
-            <tr v-if="payments.length > history_limit">
-              <td colspan="7" align="center"><a @click="history_limit += 20">Show More</a></td>
-            </tr>
-          </table>
         </template>
-        <template v-else-if="tab=='withdraw'">
-
-            <input v-model="withdrawAmount" placeholder="Amount to Withdraw"><a class="dotted" @click="withdrawAmount=ch.entries[addAssetId].secured">max</a>
-            <button class="btn btn-success" @click="call('channelToReserve', {partner: ch.partner, pairs: [[addAssetId, parseInt(withdrawAmount)]]})">Withdraw to Reserve</button>
-
-        </template>
-        <template v-else-if="tab=='deposit'">
-
-            <div class="input-group" style="width:300px">
-              <input type="text" class="form-control small-input" v-model="newPayment.address" :disabled="['none','amount'].includes(newPayment.editable)" placeholder="Address" aria-describedby="basic-addon2" @input="updateRoutes"> &nbsp;
-            </div>
-            
-            <div class="input-group" style="width:300px">
-              <input type="text" class="form-control small-input" v-model="newPayment.amount" :disabled="newPayment.editable=='none'" placeholder="Amount" aria-describedby="basic-addon2" @input="updateRoutes">
-              <select @input="updateRoutes" style="display:inline-block" v-model="newPayment.assetId" class="custom-select custom-select-lg mb-6">
-                <option v-for="(a, index) in assets" :value="index">{{addressToName(a[1])}}</option>
-              </select>
-            </div>
-
-          <div v-if="parsedAddress.hubs">
-              <div class="radio">
-                <label>
-                  <input type="radio" :value="0" v-model="newPayment.bank"> {{onchain}}</label>
-              </div>
-              <template v-if="parsedAddress.hubs.length > 0">
-                <div class="radio" v-for="id in parsedAddress.hubs">
-                  <label>
-                    <input type="radio" :value="id" v-model="newPayment.bank"> {{addressToName(id)}}</label>
-                </div>
-              </template>
-          </div>
-
-
-            <div>
-              <button type="button" class="btn btn-outline-success" @click="addExternalDeposit">Transfer 🌐</button>
-            </div> 
-        </template>
-        <template v-else-if="tab=='closeChannel'">
-
-          <hr>
-          <button class="btn btn-success" @click="call('cooperativeClose', {partner: ch.partner})">Cooperative Close</button>
-          <hr>
-
-          <button class="btn btn-danger" @click="call('startDispute', {address: ch.partner})">Dispute Close</button>
-          
-          <p v-if="devmode">
-            Status: {{ch.status}}, nonce {{ch.dispute_nonce}}
-          </p>
-        </template>
-        <template v-else-if="tab=='settings'">
+        <template v-if="channels.length == 0 || tab=='settings'">
 
           <div :key="h[0]" v-for="h in hubs.slice(1)">
             <h3>Hub name: {{h[0]}}</h3>         
             <button v-if="!channels.find(ch=>ch.partner==h[0])" class="btn btn-outline-success" @click="call('openChannel', {address: h[0]})">Join</button>
-            <b v-else>(used)</b>
+            <b v-else>(already used)</b>
+            <br>
+            <br>
           </div>
 
-          <button class="btn btn-danger" @click="call('logout')">Logout</button>
+          <p><button class="btn btn-danger" @click="call('logout')">Logout</button></p>
         </template>
 
 
@@ -282,68 +297,19 @@
   (8) 0x0f62d96d6675f32685bbdb8ac13cda7c23436f63efbb9d07700d8669ff12b7c4
   (9) 0x8d5366123cb560bb606379f90a0bfd4769eecc0557f1b362dcae9012b548b1e5
         </pre>
-     </form>      
+     </form>    
 
-               <br><br><button class="btn btn-success" @click="devmode=!devmode">Toggle Devmode</button>
+
+
+     <pre v-if="devmode">{{consoleLog}}</pre>
+     <br><br>
+
 
 
     </div>
     
-    <div v-if="mod.shown" class="modal-backdrop fade show"></div>
-    <div @click.self="mod.shown=false" class="modal fade bd-example-modal-lg" v-if="mod.shown" v-bind:style="{display: mod.shown ? 'block' : 'none'}" v-bind:class="{show: mod.shown}">
-      <div style="min-width:70%;" class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-          <div class="modal-body">
-            <div class="container-fluid">
-              
-              <div class="row">
-                <div class="col-md-6">
-                  <table class="table">
-                    <thead class="thead-dark">
-                      <tr>
-                        <th scope="col"></th>
-                        <th scope="col">You</th>
-                        <th scope="col">{{addressToName(mod.ch.partner)}}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>Available {{toTicker(mod.subch.asset)}}</td>
-                        <td>{{commy(current_derived.available)}}</td>
-                        <td>{{commy(current_derived.they_available)}}</td>
-                      </tr>
-                      <tr>
-                        <td>Hold</td>
-                        <td>{{commy(current_derived.newPayments_hold)}}</td>
-                        <td>{{commy(current_derived.inwards_hold)}}</td>
-                      </tr>
-                      <tr>
-                        <td>Insured</td>
-                        <td>{{commy(current_derived.insured)}}</td>
-                        <td>{{commy(current_derived.they_insured)}}</td>
-                      </tr>
-                      <tr>
-                        <td>Uninsured</td>
-                        <td>{{commy(current_derived.uninsured)}}</td>
-                        <td>{{commy(current_derived.they_uninsured)}}</td>
-                      </tr>
-                      <tr>
-                        <td>Credit</td>
-                        <td>{{commy(current_derived.credit)}}</td>
-                        <td>{{commy(current_derived.they_credit)}}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                
-
-
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    
+    
   </div>
 </template>
 
@@ -424,7 +390,8 @@ export default {
 
     app.call('load')
 
-    app.go(location.hash.substr(1).split(/\/|\?/)[0])
+    const tab = location.hash.substr(1).split(/\/|\?/)[0]
+    if (tab.length > 0) app.go(tab)
 
     this.interval = setInterval(function() {
       app.call('load')

@@ -49,7 +49,7 @@ export default {
   },
 
   template: `
-  <div class="progress" style="width: 100%">
+  <div class="progress" style="width: 100%;background-color: white">
     
 
       <div

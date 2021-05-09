@@ -4,7 +4,7 @@ import *  as Router from '../router'
 import { utils, ethers } from 'ethers'
 
 module.exports = async function internal_rpc (ws, json) {
-  const result = {}
+  const result:any = {}
 
   // auth_code prevents all kinds of CSRF and DNS rebinding
   // strong coupling between the daemon and the browser client
@@ -33,7 +33,7 @@ module.exports = async function internal_rpc (ws, json) {
       // triggered by frontend to update
 
       // public + private info
-      this.react({})
+      //this.react({})
       //return
 
       break
@@ -51,7 +51,7 @@ module.exports = async function internal_rpc (ws, json) {
           ).toString('hex')
       }
       await this.start(this.Config.seed)
-      this.react({})
+      //this.react({})
 
       break
 
@@ -66,13 +66,19 @@ module.exports = async function internal_rpc (ws, json) {
 
       this.fatal(1)
 
-      this.react({address: null})
+      result.address = null
       break
 
     case 'payChannel':
       await this.payChannel(json.params)
-      this.react({})
+      //this.react({})
       break
+
+    case 'createOrder':{
+      this.send(this.coordinator, json.params)
+
+      break
+    }
 
     case 'startDispute':{
       const ch = this.Channels[json.params.partner]
@@ -85,7 +91,7 @@ module.exports = async function internal_rpc (ws, json) {
         sig: ch.ackSig,
       })
       
-      this.react({confirm: 'OK'})
+      result.confirm ='OK'
 
       break
     }
@@ -103,7 +109,7 @@ module.exports = async function internal_rpc (ws, json) {
       ch.entries[json.params.assetId] = this.buildEntry(json.params.assetId)
 
       await this.flushChannel(json.params.address)
-      this.react({})
+      //this.react({})
 
       this.broadcastProfile()
 
@@ -120,9 +126,17 @@ module.exports = async function internal_rpc (ws, json) {
 
       this.Channels[json.params.partner].entries[json.params.assetId].credit_limit = json.params.credit_limit
       
-      this.react({})
+      //this.react({})
       this.broadcastProfile()
 
+      break
+    }
+
+    case 'requestCollateral':{
+
+      this.send(json.params.partner, json.params)
+      console.log("Request collateral ", json.params)
+      result.confirm ="Request sent, wait for rebalance"
       break
     }
 
@@ -140,7 +154,8 @@ module.exports = async function internal_rpc (ws, json) {
         partner: json.params.partner,
         pairs: json.params.pairs, 
       })
-      
+      //this.react({})
+
       break
     }
 
@@ -155,8 +170,9 @@ module.exports = async function internal_rpc (ws, json) {
           partner: json.params.partner,
           pairs: json.params.pairs,
         })
+        //this.react({})
       } else {
-        this.react({alert: "Partner is unresponsive"})
+        result.alert = "Partner is unresponsive"
       }
       
       break
@@ -167,12 +183,12 @@ module.exports = async function internal_rpc (ws, json) {
       const sig = await this.sendSync(json.params.partner, {method: 'cooperativeClose'})
 
       if (!sig) {
-        this.react({alert: "Partner is unresponsive"})
+        result.alert= "Partner is unresponsive"
       }
 
       const signer = await this.hashAndVerify(this.getCooperativeProof(ch), sig)
       if (signer != json.params.partner) {
-        this.react({alert: "Partner provided bad signature"})
+        result.alert= "Partner provided bad signature"
       }
     
       this.sharedState.batch.cooperativeProof.push({
@@ -185,21 +201,8 @@ module.exports = async function internal_rpc (ws, json) {
     }
   
     case 'broadcastBatch': {
-      console.log("Broadcasting batch ",this.sharedState.batch)
-      try {
-        const tx = await this.XLN.processBatch(this.sharedState.batch,  {
-          gasLimit: 5000000
-        })
-            
-      
 
-      console.log(this.sharedState.receipt = await tx.wait())
-      this.sharedState.logEvents = this.sharedState.receipt.events.map(e=>`${e.args[0]} ${e.args[1].toString()}`)
-
-      this.sharedState.batch = this.getEmptyBatch()
-      }catch(e){console.log("err ", e)}
-
-      this.react({confirm: "Batch broadcasted"})
+      this.broadcastBatch()
       return false
       break
     }
@@ -215,7 +218,10 @@ module.exports = async function internal_rpc (ws, json) {
 
       const profile = await this.getProfile(json.params.address)
 
-      if (!profile) return this.react({alert: "Invalid address "+json.params.address})
+      if (!profile) {
+        result.alert = "Invalid address "+json.params.address
+        break
+      }
 
       //profile.hubs
 
@@ -225,22 +231,21 @@ module.exports = async function internal_rpc (ws, json) {
 
 
       //await Router.bestRoutes(json.params.address, json.params)
-      this.react({
         //parsedAddress: await parseAddress(json.params.address),
-        bestRoutes: bestRoutes,
-        hubsForAddress: profile.hubs
-      })
+      result.bestRoutes =bestRoutes
+      result.hubsForAddress = profile.hubs
+      
 
       break
     }
 
     case 'clearBatch':
       this.sharedState.batch = this.getEmptyBatch()
-      this.react({confirm: 'Batch cleared'})
+      result.confirm = 'Batch cleared'
       break
 
     case 'getinfo':
-      this.react(require('./get_info')())
+      //this.react(require('./get_info')())
       break
 
     // to be called by merchant app on the same server
@@ -259,6 +264,6 @@ module.exports = async function internal_rpc (ws, json) {
     return result
   } else {
     //ws.send(JSON.stringify(result))
-    //react(result)
+    this.react(result)
   }
 }

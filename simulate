@@ -16,7 +16,7 @@ git rev-parse HEAD > HEAD
 
 pm2_opts=--no-autorestart
 wallet_port=26678
-maxport=8002
+maxport=8004
 xln_cluster_args="ts-node src/xln --wallet-url=http://localhost:$wallet_port --color --mmonkey=$maxport"
 
 # Clean up, stop all demoapps and nodes

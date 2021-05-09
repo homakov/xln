@@ -15,6 +15,12 @@ module.exports = {
   bestRoutes: [],
 
   bestRoutesLimit: 5,
+  chosenPartner: 0,
+  
+  creditLimit: '',
+  depositAmount: '',
+  withdrawAmount: '',
+  requestCollateral: '',
 
   chosenRoute: '',
 
@@ -46,10 +52,12 @@ module.exports = {
   
   address: false,
   EOA_balance: '',
-  addAssetId: 0,
+  assetId: 0,
   
   password: '',
   username: '',
+
+  consoleLog: '',
 
 
   tab: 'offchain',
@@ -78,7 +86,7 @@ module.exports = {
 
   hubsForAddress: [],
 
-  withdrawAmount: 0,
+
   chosenHub:0,
 
   
@@ -89,7 +97,7 @@ module.exports = {
   settings: !localStorage.settings,
 
   newPayment: {
-    address: hashargs['address'] ? hashargs['address'] : '0xf17f52151EbEF6C7334FAD080c5704D77216b732',
+    address: hashargs['address'] ? hashargs['address'] : '',
     amount: hashargs['amount'] ? hashargs['amount'] : '',
     private_invoice: hashargs['invoice'],
     public_invoice: hashargs['invoice'],

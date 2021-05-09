@@ -71,7 +71,8 @@ module.exports = async function(addr, forceAck) {
  
     finalState: false,
     finalSig: false,
-    finalEntries: false
+    finalEntries: false,
+    finalProof: false
   }
 
   //console.log(ch)
@@ -112,9 +113,6 @@ module.exports = async function(addr, forceAck) {
     // remove a hashlock and provide either secret or reason of failure
 
     
-    if (t.outcomeType == 'secret') {
-      ch.entries[t.assetId].offdelta += ch.isLeft ? t.amount : -t.amount
-    }
     flushData.transitions.push({
       type: t.type, 
       assetId: t.assetId,
@@ -208,6 +206,7 @@ module.exports = async function(addr, forceAck) {
       
     // signing the final state
     flushData.finalSig = await this.hashAndSign(this.getCanonicalDisputeProof(ch))
+    flushData.finalProof = this.getCanonicalDisputeProof(ch)
   }
   
 
